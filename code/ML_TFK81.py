@@ -46,10 +46,6 @@ S5 = Especie(S7, 1)
 S0.cria_L_condicional()
 np.sum(S0.L_condicional)
 
-# Achar a arvore de maxima verossimilhança e
-# ler The base substitution probabilities
-# Bonus: adaptar o que fizemos para o caso em que
-# valor pode ser "A", "T", "C" ou "G".
-
-# Estudar numpy, classes e o codigo
-# Bonus: pulley principle
+# the base substitution probabilities
+# prox reuniao: implementar o p_matrix que depende do tempo.
+# pulley principle
