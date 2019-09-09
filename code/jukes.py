@@ -119,8 +119,8 @@ def P_rat(l,n_array,pr1,pr2):
                     
 print(adj[[1,2],[1,3]])   
 #
-#pr1 = np.array([12,13,1,2,10,19,12,14,13,12,0])
-#pr2 = np.array([13,14,15,16,17,18,19,19,12,3,15,5,7])
+pr1 = np.array([12,13,1,2,10,19,12,14,13,12,0])
+pr2 = np.array([13,14,15,16,17,18,19,19,12,3,15,5,7])
 
 #tabela de frequencias e histograma usando pandas
 #tabela de frequencia
@@ -133,36 +133,34 @@ print(adj[[1,2],[1,3]])
 #hist = df.hist(bins = 20 )
 
 #histograma comparando P_calc com P_tot
-#x = np.arange(0,30,1)
-#fig, ax = plt.subplots(1,1)
-#n, bins , patches = ax.hist( Comparing_l(5,pr1,pr2), bins=20,
-#    weights = np.zeros_like(Comparing_l(5,pr1,pr2))+1/Comparing_l(5,pr1,pr2).size)
-#ax.plot(x, P_tot(5,x,pr1,pr2),'--')
-#ax.set_xlabel("Mudanças de bases")
-#ax.set_ylabel("Frequência")
-#ax.set_xlim([0,15])
-#ax.set_title("Histograma de frequencia/Comparação com densidade")
-#plt.show()
+x = np.arange(0,30,1)
+fig, ax = plt.subplots(1,1)
+n, bins , patches = ax.hist( Comparing_l(5,pr1,pr2), bins=20,
+   weights = np.zeros_like(Comparing_l(5,pr1,pr2))+1/Comparing_l(5,pr1,pr2).size)
+ax.plot(x, P_tot(5,x,pr1,pr2),'--')
+ax.set_xlabel("Mudanças de bases")
+ax.set_ylabel("Frequência")
+ax.set_xlim([0,15])
+ax.set_title("Histograma de frequencia/Comparação com densidade")
+plt.show()
+
 
 
 #grafico de linhas comparando P_calc com P_tot
-#x = np.arange(0,100)
-#plt.plot(x,P_calc(10,x,pr1,pr2),alpha=0.5,lw = 2, color = 'r',linestyle='--',marker='o')
-#plt.plot(x,P_tot(10,x,pr1,pr2),alpha = 0.5, lw = 2,
-#         label = "Comparação densidade e observados", color = 'b',linestyle='--',marker='o')
-#plt.xlabel("Base diferences")
-#plt.ylabel("Probability")
+x = np.arange(0,100)
+fig_2, bx = plt.subplots(1,1)
+bx.plot(x,P_calc(10,x,pr1,pr2),alpha=0.5,lw = 2, color = 'r',linestyle='--',marker='o')
+bx.plot(x,P_tot(10,x,pr1,pr2),alpha = 0.5, lw = 2,
+        label = "Comparação densidade e observados", color = 'b',linestyle='--',marker='o')
+bx.xlabel("Diferença de bases")
+bx.ylabel("Probabilidade")
+plt.show()
 
-
-
-#print(P_tot(10,np.array([8]),pr1,pr2))
 
 
 #plotando
 x = np.arange(0,100,1)
-#h = plt.plot(x,P_rat(10,x,pr1,pr2),lw = 2, alpha = 0.6, label='comparação',linestyle = '--'
-#             , color = 'b', marker = 'o')
-#plt.show()
+fig_3, cx = plt.subplots(1,1)
 pr1_l = []
 pr2_l = []
 for i in range(0,100):
@@ -173,7 +171,9 @@ pr2 = np.array(pr2_l)
 
 #plt.plot(range(10),linestyle = '--', marker = 'o', color = 'b')
 x = np.arange(0,100,1)
-h = plt.plot(x,P_rat(30,x,pr1,pr2),lw = 2, alpha = 0.6, label='comparação',linestyle = '--'
+h = cx.plot(x,P_rat(30,x,pr1,pr2),lw = 2, alpha = 0.6, label='comparação',linestyle = '--'
              , color = 'b', marker = 'o')
+cx.set_xlabel("Mudanças de bases")
+cx.set_ylabel("Razão")
 plt.yscale(value = "log")
 plt.show()
