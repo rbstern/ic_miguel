@@ -57,6 +57,4 @@ S5 = Especie(S7, 1, meu_tempo = 0.3)
 S0.cria_L_condicional()
 S0.L_arvore
 
-# the base substitution probabilities
-# prox reuniao: implementar o p_matrix que depende do tempo.
 # pulley principle
