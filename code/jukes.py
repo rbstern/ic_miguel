@@ -1,13 +1,11 @@
 import numpy as np
 import math
-import matplotlib as mat
 import matplotlib.pyplot as plt
 import scipy
 import random
 from random import randrange
 import pandas as pd
 import pylab as pl
-import seaborn as sb
 
 adj = np.matrix([[0,2,2,1,2,2,1,1,2,2,2,2,2,2,1,1,1,2,2,1],
                 [2,0,2,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,2,2],
