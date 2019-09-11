@@ -57,4 +57,6 @@ S5 = Especie(S7, 1, meu_tempo = 0.3)
 S0.cria_L_condicional()
 S0.L_arvore
 
-# pulley principle
+# pulley principle: provar que vale sempre
+# começar leitura de finding maximum likelihood tree...
+# ir ate Finding Optimal Segment Lengths
