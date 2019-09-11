@@ -38,6 +38,7 @@ class Especie:
                 filho.cria_L_condicional()
             L_filhos = np.multiply(self.filhos[0].L_condicional, self.filhos[1].L_condicional)
             self.L_condicional = np.multiply(self.priori, L_filhos)
+            self.L_arvore = np.sum(self.L_condicional)
         else: # self eh no interno
             for filho in self.filhos:
                 filho.cria_L_condicional()
@@ -54,7 +55,7 @@ S7 = Especie(S8, None, meu_tempo = 0.9)
 S4 = Especie(S7, 0, meu_tempo = 0.4)
 S5 = Especie(S7, 1, meu_tempo = 0.3)
 S0.cria_L_condicional()
-np.sum(S0.L_condicional)
+S0.L_arvore
 
 # the base substitution probabilities
 # prox reuniao: implementar o p_matrix que depende do tempo.
