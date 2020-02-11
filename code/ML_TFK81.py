@@ -4,6 +4,8 @@ import numpy as np
 import math
 
 
+
+
 n_base = 4
 u = 1  #taxa de substituição de base por tempo
 # priori para a raiz
