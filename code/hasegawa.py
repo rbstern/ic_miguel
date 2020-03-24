@@ -15,8 +15,7 @@ import time
 # Nucleotideos de classe 1 --> 3ª posiçao no codon
 # Nucleotideos de classe 2 --> 1ª e 2ª posiçoes no codon
 num_especie = 7
-pi_1 = np.array([0.169, 0.429, 0.364, 0.038])
-pi_2 = np.array([0.297, 0.267, 0.310, 0.126])
+
 # Quantidades amostrais
 # Numero de transversoes da classe 1
 V1 = np.array([[0, 82, 83, 85, 77, 79, 77],
@@ -56,20 +55,18 @@ S2 = np.array([[0, 68, 81, 81, 87, 79, 79],
 
 # Medidas estacionarias de cada base
 # T = 0, C = 1, A = 2, G = 3
-pi_1 = np.array([0.169, 0.429, 0.364, 0.038])
-pi_2 = np.array([0.297, 0.267, 0.310, 0.126])
 pi_1 = sm.Matrix([[0.169, 0.429, 0.364, 0.038]])
 pi_2 = sm.Matrix([[0.297, 0.267, 0.310, 0.126]])
 r_1 = 232
 r_2 = 667
 t_2 = 65
-t_1, t_3, t_4, t_5, t_6, f_1, alpha_1, beta_1, beta_2, f_2, alpha_2, beta_2 = sm.symbols(
-        r't_1 t_3 t_4 t_5 t_6 f_1 \alpha_1 \beta_1 \beta_2 f_2 \alpha_2 \beta_2')
+t_1, t_3, t_4, t_5, t_6, f_1, alpha_1, beta_1, f_2, alpha_2, beta_2 = sm.symbols(
+        r't_1 t_3 t_4 t_5 t_6 f_1 \alpha_1 \beta_1 f_2 \alpha_2 \beta_2')
 
 # Matriz de transição
 def P_trans(t, classe):
     if classe == 1:
-        beta, alpha = sm.symbols('beta_1, alpha_1')
+        beta, alpha = sm.symbols(r'\beta_1, \alpha_1')
         pi_y = pi_1[0] + pi_1[1]
         pi_r = pi_1[2] + pi_1[3]
         part_1 = sm.Matrix([[1,1,1,1]]).transpose()*sm.Matrix([[pi_1
@@ -84,7 +81,7 @@ def P_trans(t, classe):
         mat_trans = part_1 + part_2 + part_3 + part_4
         return mat_trans
     else:
-        beta, alpha = sm.symbols('beta_2, alpha_2')
+        beta, alpha = sm.symbols(r'\beta_2, \alpha_2')
         pi_y = pi_2[0] + pi_2[1]
         pi_r = pi_2[2] + pi_2[3]
         part_1 = sm.Matrix([[1,1,1,1]]).transpose()*sm.Matrix([[pi_2
@@ -119,7 +116,7 @@ def V_barra (classe, especie):
     else:
         pi_y = pi_2[0] + pi_2[1]
         pi_r = pi_2[2] + pi_2[3]
-        f, beta = sm.symbols(r'f_1 \beta_1')
+        f, beta = sm.symbols(r'f_2 \beta_2')
         if especie == 2:
             media = 2*f*r_2*(pi_y*pi_r)*(1 - sm.exp(-2*beta*t_2))
         else:
@@ -315,6 +312,19 @@ def q_2(i,j,k,l, especie_1, especie_2, especie_3, especie_4, classe):
                                        classe)[y, l]*P_trans(t_L, classe)[y, j]
             q = f*soma
             return q
+        elif especie_1 == especie_3 and especie_2 < especie_4:
+            soma = 0
+            t_I = sm.Symbol('t_{}'.format(especie_1))
+            t_J = sm.Symbol('t_{}'.format(especie_2))
+            t_K = sm.Symbol('t_{}'.format(especie_3))
+            t_L = sm.Symbol('t_{}'.format(especie_4))
+            if i == k:
+                for x in range(0, pi_1.shape[1]):
+                    soma += pi_1[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J, 
+                                classe)[x, j]*P_trans(t_J, classe)[x, l]
+            q = f*soma
+            return q
+                    
     else:
         f = sm.Symbol('f_2')
         if especie_1 < especie_2 < especie_3 < especie_4:
@@ -373,6 +383,18 @@ def q_2(i,j,k,l, especie_1, especie_2, especie_3, especie_4, classe):
                     soma += pi_2[x]*P_trans(2*t_I - t_K, classe)[x, i]*P_trans(t_L,
                                 classe)[x, l]*P_trans(t_K - t_L, classe)[x, y]*P_trans(t_L,
                                        classe)[y, l]*P_trans(t_L, classe)[y, j]
+            q = f*soma
+            return q
+        elif especie_1 == especie_3 and especie_2 < especie_4:
+            soma  = 0
+            t_I = sm.Symbol('t_{}'.format(especie_1))
+            t_J = sm.Symbol('t_{}'.format(especie_2))
+            t_K = sm.Symbol('t_{}'.format(especie_3))
+            t_L = sm.Symbol('t_{}'.format(especie_4))
+            if i == k:
+                for x in range(0, pi_2.shape[1]):
+                    soma += pi_2[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J, 
+                                classe)[x, j]*P_trans(t_J, classe)[x, l]
             q = f*soma
             return q
         
