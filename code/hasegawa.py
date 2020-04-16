@@ -1,7 +1,7 @@
 import numpy as np
 import math
-import sympy as sm
 import time
+from scipy.optimize import minimize
 
 # Matrizes do numero de transições e transversoes observadas entre especies
 # 0 - RATO 
@@ -55,128 +55,127 @@ S2 = np.array([[0, 68, 81, 81, 87, 79, 79],
 
 # Medidas estacionarias de cada base
 # T = 0, C = 1, A = 2, G = 3
-pi_1 = sm.Matrix([[0.169, 0.429, 0.364, 0.038]])
-pi_2 = sm.Matrix([[0.297, 0.267, 0.310, 0.126]])
+pi_1 = np.array([0.169, 0.429, 0.364, 0.038])
+pi_2 = np.array([0.297, 0.267, 0.310, 0.126])
 r_1 = 232
 r_2 = 667
 t_2 = 65
-t_1, t_3, t_4, t_5, t_6, f_1, alpha_1, beta_1, f_2, alpha_2, beta_2 = sm.symbols(
-        r't_1 t_3 t_4 t_5 t_6 f_1 \alpha_1 \beta_1 f_2 \alpha_2 \beta_2')
 
 # Matriz de transição
-def P_trans(t, classe):
+def P_trans(t,beta, alpha, classe):
     if classe == 1:
-        beta, alpha = sm.symbols(r'\beta_1, \alpha_1')
+        beta1 = beta
+        alpha1 = alpha
         pi_y = pi_1[0] + pi_1[1]
         pi_r = pi_1[2] + pi_1[3]
-        part_1 = sm.Matrix([[1,1,1,1]]).transpose()*sm.Matrix([[pi_1
-                          [0], pi_1[1], pi_1[2], pi_1[3]]])
-        part_2 = sm.exp(-(beta* t))*sm.Matrix([[1/pi_y, 
-                       1/pi_y, -1/pi_r, -1/pi_r]]).transpose()*sm.Matrix([[pi_r*pi_1[0],
-                                                pi_r*pi_1[1], -pi_y*pi_1[2], -pi_y*pi_1[3]]])
-        part_3 = sm.exp(-t*(pi_y*beta + pi_r*alpha))*sm.Matrix([[0, 0, 
-                       pi_1[3]/pi_r, -pi_1[2]/pi_r]]).transpose()*sm.Matrix([[0, 0, 1, -1]])
-        part_4 = sm.exp(-t*(pi_y*alpha + pi_r*beta))*sm.Matrix([[pi_1[1]/pi_y,
-                       -pi_1[0]/pi_y, 0, 0]]).transpose()*sm.Matrix([[1, -1, 0, 0]])
+        part_1 = np.dot(np.array([[1,1,1,1]]).transpose(), np.array([[pi_1
+                              [0], pi_1[1], pi_1[2], pi_1[3]]]))
+        part_2 = np.exp(-(beta1* t))*np.dot(np.array([[1/pi_y, 
+                           1/pi_y, -1/pi_r, -1/pi_r]]).transpose(), np.array([[pi_r*pi_1[0],
+                                            pi_r*pi_1[1], -pi_y*pi_1[2], -pi_y*pi_1[3]]]))
+        part_3 = np.exp(-t*(pi_y*beta1 + pi_r*alpha1))*np.dot(np.array([[0, 0, 
+                       pi_1[3]/pi_r, -pi_1[2]/pi_r]]).transpose(), np.array([[0, 0, 1, -1]]))
+        part_4 = np.exp(-t*(pi_y*alpha1 + pi_r*beta1))*np.dot(np.array([[pi_1[1]/pi_y,
+                          -pi_1[0]/pi_y, 0, 0]]).transpose(), np.array([[1, -1, 0, 0]]))
         mat_trans = part_1 + part_2 + part_3 + part_4
-        return mat_trans
     else:
-        beta, alpha = sm.symbols(r'\beta_2, \alpha_2')
+        beta2 = beta
+        alpha2 = alpha
         pi_y = pi_2[0] + pi_2[1]
         pi_r = pi_2[2] + pi_2[3]
-        part_1 = sm.Matrix([[1,1,1,1]]).transpose()*sm.Matrix([[pi_2
-                          [0], pi_2[1], pi_2[2], pi_2[3]]])
-        part_2 = sm.exp(-(beta* t))*sm.Matrix([[1/pi_y, 
-                       1/pi_y, -1/pi_r, -1/pi_r]]).transpose()*sm.Matrix([[pi_r*pi_2[0],
-                                                pi_r*pi_2[1], -pi_y*pi_2[2], -pi_y*pi_2[3]]])
-        part_3 = sm.exp(-t*(pi_y*beta + pi_r*alpha))*sm.Matrix([[0, 0, 
-                       pi_2[3]/pi_r, -pi_2[2]/pi_r]]).transpose()*sm.Matrix([[0, 0, 1, -1]])
-        part_4 = sm.exp(-t*(pi_y*alpha + pi_r*beta))*sm.Matrix([[pi_2[1]/pi_y,
-                       -pi_2[0]/pi_y, 0, 0]]).transpose()*sm.Matrix([[1, -1, 0, 0]])
-        mat_trans = part_1 + part_2 + part_3 + part_4
-        return mat_trans
+        part_1 = np.dot(np.array([[1,1,1,1]]).transpose(), np.array([[pi_2
+                              [0], pi_2[1], pi_2[2], pi_2[3]]]))
+        part_2 = np.exp(-(beta2* t))*np.dot(np.array([[1/pi_y, 
+                           1/pi_y, -1/pi_r, -1/pi_r]]).transpose(), np.array([[pi_r*pi_2[0],
+                                        pi_r*pi_2[1], -pi_y*pi_2[2], -pi_y*pi_2[3]]]))
+        part_3 = np.exp(-t*(pi_y*beta2 + pi_r*alpha2))*np.dot(np.array([[0, 0, 
+                           pi_2[3]/pi_r, -pi_2[2]/pi_r]]).transpose(), np.array([[0, 0, 1, -1]]))
+        part_4 = np.exp(-t*(pi_y*alpha2 + pi_r*beta2))*np.dot(np.array([[pi_2[1]/pi_y,
+                           -pi_2[0]/pi_y, 0, 0]]).transpose(), np.array([[1, -1, 0, 0]]))
+        mat_trans = part_1 + part_2 + part_3 + part_4     
+    return mat_trans
 
-# Testando
-P_trans(t_1, 1)[0,0]
-P_trans(t_1, 2)[0,0]
+
 
 # Medias e variancias
-def V_barra (classe, especie):
+def V_barra (f, beta, especie, classe, t_esp):
+    if classe == 1:
+        pi_y = pi_1[0] + pi_1[1]
+        pi_r = pi_1[2] + pi_1[3]   
+        media = 2*f*r_1*(pi_y*pi_r)*(1 - np.exp(-2*beta*t_esp))
+    else:
+        pi_y = pi_2[0] + pi_2[1]
+        pi_r = pi_2[2] + pi_2[3]
+        if especie == 2:
+            media = 2*f*r_2*(pi_y*pi_r)*(1 - np.exp(-2*beta*t_2))
+        else:
+            media = 2*f*r_2*(pi_y*pi_r)*(1 - np.exp(-2*beta*t_esp))
+    return media
+
+
+def S_barra (f, beta, alpha, especie, classe, t_esp):
     if classe == 1:
         pi_y = pi_1[0] + pi_1[1]
         pi_r = pi_1[2] + pi_1[3]
-        f, beta = sm.symbols(r'f_1 \beta_1')
         if especie == 2:
-            media = 2*f*r_1*(pi_y*pi_r)*(1 - sm.exp(-2*beta*t_2))
+            media = 2*f*r_1*(((pi_1[0]*pi_1[1])+(pi_1[2]*pi_1[3])) + 
+                       (((pi_1[0]*pi_1[1]*pi_r)/pi_y + (pi_1[2]*pi_1[3]*pi_y)/pi_r)*
+                       np.exp(-2*beta*t_2)) -
+                       ((pi_1[0]*pi_1[1]/pi_y) * np.exp(-(2*t_2)*(alpha*pi_y + beta*pi_r))) -
+                       ((pi_1[2]*pi_1[3]/pi_r) * np.exp(-(2*t_2)*(alpha*pi_r + beta*pi_y))))
         else:
-            t_esp = sm.Symbol('t_{}'.format(especie))
-            media = 2*f*r_1*(pi_y*pi_r)*(1 - sm.exp(-2*beta*t_esp))
-        return media
+            media = 2*f*r_1*(((pi_1[0]*pi_1[1])+(pi_1[2]*pi_1[3])) + 
+                       (((pi_1[0]*pi_1[1]*pi_r)/pi_y + (pi_1[2]*pi_1[3]*pi_y)/pi_r)*
+                       np.exp(-2*beta*t_esp)) -
+                       ((pi_1[0]*pi_1[1]/pi_y) * np.exp(-(2*t_esp)*(alpha*pi_y + beta*pi_r))) -
+                       ((pi_1[2]*pi_1[3]/pi_r) * np.exp(-(2*t_esp)*(alpha*pi_r + beta*pi_y))))
+    else:
+        pi_y = pi_2[0] + pi_2[1]
+        pi_r = pi_2[2] + pi_2[3]
+        if especie == 2:
+            media = 2*f*r_2*(((pi_2[0]*pi_2[1])+(pi_2[2]*pi_2[3])) + 
+                       (((pi_2[0]*pi_2[1]*pi_r)/pi_y + (pi_2[2]*pi_2[3]*pi_y)/pi_r)*
+                       np.exp(-2*beta*t_2)) -
+                       ((pi_2[0]*pi_2[1]/pi_y) * np.exp(-(2*t_2)*(alpha*pi_y + beta*pi_r))) -
+                       ((pi_2[2]*pi_2[3]/pi_r) * np.exp(-(2*t_2)*(alpha*pi_r + beta*pi_y))))
+        else:
+            media = 2*f*r_2*(((pi_2[0]*pi_2[1])+(pi_2[2]*pi_2[3])) + 
+                       (((pi_2[0]*pi_2[1]*pi_r)/pi_y + (pi_2[2]*pi_2[3]*pi_y)/pi_r)*
+                       np.exp(-2*beta*t_esp)) -
+                       ((pi_2[0]*pi_2[1]/pi_y) * np.exp(-(2*t_esp)*(alpha*pi_y + beta*pi_r))) -
+                       ((pi_2[2]*pi_2[3]/pi_r) * np.exp(-(2*t_esp)*(alpha*pi_r + beta*pi_y))))
+    return media
+
+
+
+def V_var (f, beta, especie, classe, t_esp):
+    if classe == 1:
+        var = V_barra(f, beta, especie, classe, t_esp)*(1 - 
+                   (V_barra(f, beta, especie, classe, t_esp)/r_1))
+    else:
+        var = V_barra(f, beta, especie, classe, t_esp)*(1 - 
+                   (V_barra(f, beta, especie, classe, t_esp)/r_2))
+    return var
+
+
+
+def S_var (f, beta, alpha, especie, classe, t_esp):
+    if classe == 1:
+        var = S_barra(f, beta, alpha, especie, classe, t_esp)*(1 - 
+                     (S_barra(f, beta, alpha, especie, classe, t_esp)/r_1))
+        return var
+    else:
+        var = S_barra(f, beta, alpha, especie, classe, t_esp)*(1 - 
+                     (S_barra(f, beta, alpha, especie, classe, t_esp)/r_2))
+        return var
     
-    else:
-        pi_y = pi_2[0] + pi_2[1]
-        pi_r = pi_2[2] + pi_2[3]
-        f, beta = sm.symbols(r'f_2 \beta_2')
-        if especie == 2:
-            media = 2*f*r_2*(pi_y*pi_r)*(1 - sm.exp(-2*beta*t_2))
-        else:
-            t_esp = sm.Symbol('t_{}'.format(especie))
-            media = 2*f*r_2*(pi_y*pi_r)*(1 - sm.exp(-2*beta*t_esp))
-        return media
-
-def S_barra (classe, especie):
+def cov_V_S(V_barra, S_barra, classe):
     if classe == 1:
-        pi_y = pi_1[0] + pi_1[1]
-        pi_r = pi_1[2] + pi_1[3]
-        f, beta, alpha = sm.symbols(r'f_1 \beta_1 \alpha_1')
-        if especie == 2:
-            media = 2*f*r_1*(((pi_1[0]*pi_1[1])+(pi_1[2]*pi_1[3])) + 
-                       (((pi_1[0]*pi_1[1]*pi_r)/pi_y + (pi_1[2]*pi_1[3]*pi_y)/pi_r)*
-                       sm.exp(-2*beta*t_2)) -
-                       ((pi_1[0]*pi_1[1]/pi_y) * sm.exp(-(2*t_2)*(alpha*pi_y + beta*pi_r))) -
-                       ((pi_1[2]*pi_1[3]/pi_r) * sm.exp(-(2*t_2)*(alpha*pi_r + beta*pi_y))))
-        else:
-            t = sm.Symbol('t_{}'.format(especie))
-            media = 2*f*r_1*(((pi_1[0]*pi_1[1])+(pi_1[2]*pi_1[3])) + 
-                       (((pi_1[0]*pi_1[1]*pi_r)/pi_y + (pi_1[2]*pi_1[3]*pi_y)/pi_r)*
-                       sm.exp(-2*beta*t)) -
-                       ((pi_1[0]*pi_1[1]/pi_y) * sm.exp(-(2*t)*(alpha*pi_y + beta*pi_r))) -
-                       ((pi_1[2]*pi_1[3]/pi_r) * sm.exp(-(2*t)*(alpha*pi_r + beta*pi_y))))
-        return media
+       cov = -(V_barra*S_barra)/r_1
     else:
-        pi_y = pi_2[0] + pi_2[1]
-        pi_r = pi_2[2] + pi_2[3]
-        f, beta, alpha = sm.symbols(r'f_2 \beta_2 \alpha_2')
-        if especie == 2:
-            media = 2*f*r_2*(((pi_2[0]*pi_2[1])+(pi_2[2]*pi_2[3])) + 
-                       (((pi_2[0]*pi_2[1]*pi_r)/pi_y + (pi_2[2]*pi_2[3]*pi_y)/pi_r)*
-                       sm.exp(-2*beta*t_2)) -
-                       ((pi_2[0]*pi_2[1]/pi_y) * sm.exp(-(2*t_2)*(alpha*pi_y + beta*pi_r))) -
-                       ((pi_2[2]*pi_2[3]/pi_r) * sm.exp(-(2*t_2)*(alpha*pi_r + beta*pi_y))))
-        else:
-            t = sm.Symbol('t_{}'.format(especie))
-            media = 2*f*r_2*(((pi_2[0]*pi_2[1])+(pi_2[2]*pi_2[3])) + 
-                       (((pi_2[0]*pi_2[1]*pi_r)/pi_y + (pi_2[2]*pi_2[3]*pi_y)/pi_r)*
-                       sm.exp(-2*beta*t)) -
-                       ((pi_2[0]*pi_2[1]/pi_y) * sm.exp(-(2*t)*(alpha*pi_y + beta*pi_r))) -
-                       ((pi_2[2]*pi_2[3]/pi_r) * sm.exp(-(2*t)*(alpha*pi_r + beta*pi_y))))
-        return media
-
-def V_var (classe, especie):
-    if classe == 1:
-        var = V_barra(classe, especie)*(1 - (V_barra(classe, especie)/r_1))
-        return var
-    else:
-        var = V_barra(classe, especie)*(1 - (V_barra(classe, especie)/r_2))
-        return var
-
-def S_var (classe, especie):
-    if classe == 1:
-        var = S_barra(classe, especie)*(1 - (S_barra(classe, especie)/r_1))
-        return var
-    else:
-        var = S_barra(classe, especie)*(1 - (S_barra(classe, especie)/r_2))
-        return var
+       cov = -(V_barra*S_barra)/r_2
+    return cov
+    
 
 # Definindo transversoes e transiçoes amostrais
 def V_k(classe, especie):
@@ -213,192 +212,170 @@ def S_k(classe, especie):
         s_k = soma/(7 - especie)
         return s_k
 
-# Definindo o vetor d_barra de medias
-D_barra = sm.Matrix([[V_barra(1,1), V_barra(1,2),V_barra(1,3), V_barra(1,4), V_barra(1,5),
-V_barra(1,6), S_barra(1,1), S_barra(1,2), S_barra(1,3), S_barra(1,4), S_barra(1,5),
-S_barra(1,6), V_barra(2,1), V_barra(2,2), V_barra(2,3), V_barra(2,4), V_barra(2,5), 
-V_barra(2,6), S_barra(2,1), S_barra(2,2), S_barra(2,3), S_barra(2,4), S_barra(2,5),
-S_barra(2,6)]]).transpose()
 
 # Definindo o vetor de observações
-D_tilde = sm.Matrix([[V_k(1,1), V_k(1,2),V_k(1,3), V_k(1,4), V_k(1,5),
+D_tilde = np.array([[V_k(1,1), V_k(1,2),V_k(1,3), V_k(1,4), V_k(1,5),
 V_k(1,6), S_k(1,1), S_k(1,2), S_k(1,3), S_k(1,4), S_k(1,5),
 S_k(1,6), V_k(2,1), V_k(2,2), V_k(2,3), V_k(2,4), V_k(2,5), 
 V_k(2,6), S_k(2,1), S_k(2,2), S_k(2,3), S_k(2,4), S_k(2,5),
-S_k(2,6)]]).transpose()
+S_k(2,6)]])
+    
+
 
     
 # Definindo a covarincia e variancia de um V_k^(i) e S_k(i)
 # se tipo == 0 --> V_k^(i)
 # se tipo == 1 --> S_k^(i)
-def q_1(i,j, especie_1, especie_2,classe):
+def q_1(f, t, alpha, beta, i, j, especie_1, classe):
     if classe == 1:
-        f = sm.Symbol('f_1')
         if especie_1 != 2:
-            t = sm.Symbol('t_{}'.format(especie_1))
-            q = f*pi_1[i]*P_trans(t, classe)[i, j]
+            q = f*pi_1[i]*P_trans(t, beta, alpha, classe)[i, j]
             return q
         else:
-            q = f*pi_1[i]*P_trans(t_2, classe)[i, j]
+            q = f*pi_1[i]*P_trans(t_2, beta, alpha, classe)[i, j]
             return q
     else:
-        f = sm.Symbol('f_2')
         if especie_1 != 2:
-            t = sm.Symbol('t_{}'.format(especie_1))
-            q = f*pi_2[i]*P_trans(t, classe)[i, j]
+            q = f*pi_2[i]*P_trans(t, beta, alpha, classe)[i, j]
             return q
         else:
-            q = f*pi_2[i]*P_trans(t_2, classe)[i, j]
+            q = f*pi_2[i]*P_trans(t_2, beta, alpha, classe)[i, j]
             return q
         
-def q_2(i,j,k,l, especie_1, especie_2, especie_3, especie_4, classe):
+def q_2(t_I, t_J, t_K, t_L, f , alpha, beta, i, j, k, l, 
+        especie_1, especie_2, especie_3, especie_4, classe):
     if classe == 1:
-        f = sm.Symbol('f_1')
         if especie_1 < especie_2 < especie_3 < especie_4:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            for x in range(0, pi_1.shape[1]):
-                for y in range(0, pi_1.shape[1]):
-                    soma += pi_1[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J,
-                                classe)[x, j]*P_trans(t_J - t_K, classe)[x, y]*P_trans(t_K,
-                                       classe)[y, k]*P_trans(t_K, classe)[y, l]
+            for x in range(0, pi_1.size):
+                for y in range(0, pi_1.size):
+                    soma += pi_1[x]*P_trans(2*t_I - t_J, beta, alpha,classe)[x, i]*P_trans(t_J,
+                                beta, alpha, classe)[x, j]*P_trans(t_J - t_K,
+                                                   beta, alpha, classe)[x, y]*P_trans(t_K,
+                                       beta, alpha, classe)[y, k]*P_trans(t_K, 
+                                                          beta, alpha, classe)[y, l]
             q = f*soma
             return q
         elif especie_2 > especie_3 and especie_2 < especie_4:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            for x in range(0, pi_1.shape[1]):
-                for y in range(0, pi_1.shape[1]):
-                    soma += pi_1[x]*P_trans(2*t_I - t_K, classe)[x, i]*P_trans(t_K,
-                                classe)[x, k]*P_trans(t_K - t_J, classe)[x, y]*P_trans(t_J,
-                                       classe)[y, j]*P_trans(t_J, classe)[y, l]
+            for x in range(0, pi_1.size):
+                for y in range(0, pi_1.size):
+                    soma += pi_1[x]*P_trans(2*t_I - t_K, beta, alpha, classe)[x, i]*P_trans(t_K,
+                                beta, alpha, classe)[x, k]*P_trans(t_K - t_J, 
+                                                   beta, alpha, classe)[x, y]*P_trans(t_J,
+                                       beta, alpha, classe)[y, j]*P_trans(t_J, 
+                                                          beta, alpha, classe)[y, l]
             q = f*soma
             return q
         elif especie_2 == especie_3:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
             if j == k:
-                for x in range(0, pi_1.shape[1]):
-                    soma += pi_1[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J, 
-                                classe)[x, j]*P_trans(t_J, classe)[x, l]
+                for x in range(0, pi_1.size):
+                    soma += pi_1[x]*P_trans(2*t_I - t_J, beta, alpha, classe)[x, i]*P_trans(t_J, 
+                                beta, alpha, classe)[x, j]*P_trans(t_J, beta, alpha,
+                                                   classe)[x, l]
             q = f*soma
             return q
         elif especie_2 == especie_4:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
             if j == l:
-                for x in range(0, pi_1.shape[1]):
-                    soma += pi_1[x]*P_trans(2*t_I - t_K, classe)[x, i]*P_trans(t_K,
-                                classe)[x, k]*P_trans(t_K, classe)[x, l]
+                for x in range(0, pi_1.size):
+                    soma += pi_1[x]*P_trans(2*t_I - t_K, beta, alpha, classe)[x, i]*P_trans(t_K,
+                                beta, alpha, classe)[x, k]*P_trans(t_K, beta, alpha,
+                                                   classe)[x, l]
             q = f*soma
             return q
         elif especie_2 > especie_4:
             soma =  0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            t_L = sm.Symbol('t_{}'.format(especie_4))
-            for x in range(0, pi_1.shape[1]):
-                for y in range(0, pi_1.shape[1]):
-                    soma += pi_1[x]*P_trans(2*t_I - t_K, classe)[x, i]*P_trans(t_L,
-                                classe)[x, l]*P_trans(t_K - t_L, classe)[x, y]*P_trans(t_L,
-                                       classe)[y, l]*P_trans(t_L, classe)[y, j]
+            for x in range(0, pi_1.size):
+                for y in range(0, pi_1.size):
+                    soma += pi_1[x]*P_trans(2*t_I - t_K, beta, alpha, classe)[x, i]*P_trans(t_L,
+                                beta, alpha, classe)[x, l]*P_trans(t_K - t_L, beta, alpha,
+                                                   classe)[x, y]*P_trans(t_L,
+                                       beta, alpha, classe)[y, l]*P_trans(t_L, beta, alpha, 
+                                                          classe)[y, j]
             q = f*soma
             return q
         elif especie_1 == especie_3 and especie_2 < especie_4:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            t_L = sm.Symbol('t_{}'.format(especie_4))
             if i == k:
-                for x in range(0, pi_1.shape[1]):
-                    soma += pi_1[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J, 
-                                classe)[x, j]*P_trans(t_J, classe)[x, l]
+                for x in range(0, pi_1.size):
+                    soma += pi_1[x]*P_trans(2*t_I - t_J, beta, alpha, classe)[x, i]*P_trans(t_J, 
+                                beta, alpha, classe)[x, j]*P_trans(t_J, beta, alpha, 
+                                                   classe)[x, l]
             q = f*soma
             return q
                     
     else:
-        f = sm.Symbol('f_2')
         if especie_1 < especie_2 < especie_3 < especie_4:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            for x in range(0, pi_2.shape[1]):
-                for y in range(0, pi_1.shape[1]):
-                    soma += pi_2[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J,
-                                classe)[x, j]*P_trans(t_J - t_K, classe)[x, y]*P_trans(t_K,
-                                       classe)[y, k]*P_trans(t_K, classe)[y, l]
+            for x in range(0, pi_2.size):
+                for y in range(0, pi_2.size):
+                    soma += pi_2[x]*P_trans(2*t_I - t_J, beta, alpha, classe)[x, i]*P_trans(t_J,
+                                beta, alpha, classe)[x, j]*P_trans(t_J - t_K, beta, alpha,
+                                                   classe)[x, y]*P_trans(t_K, beta, alpha,
+                                       classe)[y, k]*P_trans(t_K, beta, alpha, classe)[y, l]
             q = f*soma
             return q
         elif especie_2 > especie_3 and especie_2 < especie_4:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            for x in range(0, pi_2.shape[1]):
-                for y in range(0, pi_1.shape[1]):
-                    soma += pi_2[x]*P_trans(2*t_I - t_K, classe)[x, i]*P_trans(t_K,
-                                classe)[x, k]*P_trans(t_K - t_J, classe)[x, y]*P_trans(t_J,
-                                       classe)[y, j]*P_trans(t_J, classe)[y, l]
+            for x in range(0, pi_2.size):
+                for y in range(0, pi_2.size):
+                    soma += pi_2[x]*P_trans(2*t_I - t_K, beta, alpha, classe)[x, i]*P_trans(t_K,
+                                beta, 
+                                alpha, classe)[x, k]*P_trans(t_K - t_J, beta, alpha, 
+                                             classe)[x, y]*P_trans(t_J,
+                                       beta, alpha, classe)[y, j]*P_trans(t_J, beta, alpha,
+                                                          classe)[y, l]
             q = f*soma
             return q
         elif especie_2 == especie_3:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
             if j == k:
-                for x in range(0, pi_2.shape[1]):
-                    soma += pi_2[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J, 
-                                classe)[x, j]*P_trans(t_J, classe)[x, l]
+                for x in range(0, pi_2.size):
+                    soma += pi_2[x]*P_trans(2*t_I - t_J, beta, alpha, classe)[x, i]*P_trans(t_J, 
+                                beta, alpha, classe)[x, j]*P_trans(t_J, beta, alpha, 
+                                                   classe)[x, l]
             q = f*soma
             return q
         elif especie_2 == especie_4:
             soma = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
             if j == l:
-                for x in range(0, pi_2.shape[1]):
-                    soma += pi_2[x]*P_trans(2*t_I - t_K, classe)[x, i]*P_trans(t_K,
-                                classe)[x, k]*P_trans(t_K, classe)[x, l]
+                for x in range(0, pi_2.size):
+                    soma += pi_2[x]*P_trans(2*t_I - t_K, beta, alpha, classe)[x, i]*P_trans(t_K,
+                                beta, alpha, classe)[x, k]*P_trans(t_K, 
+                                                   beta, alpha, classe)[x, l]
             q = f*soma
             return q
         elif especie_2 > especie_4:
             soma =  0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            t_L = sm.Symbol('t_{}'.format(especie_4))
-            for x in range(0, pi_2.shape[1]):
-                for y in range(0, pi_2.shape[1]):
-                    soma += pi_2[x]*P_trans(2*t_I - t_K, classe)[x, i]*P_trans(t_L,
-                                classe)[x, l]*P_trans(t_K - t_L, classe)[x, y]*P_trans(t_L,
-                                       classe)[y, l]*P_trans(t_L, classe)[y, j]
+            for x in range(0, pi_2.size):
+                for y in range(0, pi_2.size):
+                    soma += pi_2[x]*P_trans(2*t_I - t_K, beta, alpha, classe)[x, i]*P_trans(t_L,
+                                beta, alpha, classe)[x, l]*P_trans(t_K - t_L, 
+                                                   beta, alpha, classe)[x, y]*P_trans(t_L,
+                                       beta, alpha, classe)[y, l]*P_trans(t_L, 
+                                                          beta, alpha, classe)[y, j]
             q = f*soma
             return q
         elif especie_1 == especie_3 and especie_2 < especie_4:
             soma  = 0
-            t_I = sm.Symbol('t_{}'.format(especie_1))
-            t_J = sm.Symbol('t_{}'.format(especie_2))
-            t_K = sm.Symbol('t_{}'.format(especie_3))
-            t_L = sm.Symbol('t_{}'.format(especie_4))
             if i == k:
-                for x in range(0, pi_2.shape[1]):
-                    soma += pi_2[x]*P_trans(2*t_I - t_J, classe)[x, i]*P_trans(t_J, 
-                                classe)[x, j]*P_trans(t_J, classe)[x, l]
+                for x in range(0, pi_2.size):
+                    soma += pi_2[x]*P_trans(2*t_I - t_J, beta, alpha, classe)[x, i]*P_trans(t_J, 
+                                beta, alpha, classe)[x, j]*P_trans(t_J, beta, alpha, 
+                                                   classe)[x, l]
             q = f*soma
             return q
-        
-def cov(especie_1, especie_2, especie_3, especie_4, classe, tipo1, tipo2):
+
+
+# q_1(f, t, alpha, beta, i, j, especie_1, classe)
+# q_2(t_I, t_J, t_K, t_L, f , alpha, beta, i, j, k, l, 
+# especie_1, especie_2, especie_3, especie_4, classe)
+            
+def cov(t_I, t_J, t_K, t_L, 
+        especie_1, especie_2, especie_3, especie_4, classe, tipo1, tipo2,
+        f, alpha, beta):
     comb_transv = [[0,2],[0,3],[1,2],[1,3],
                    [2,0],[2,1],[3,0],[3,1]]
     comb_transi = [[0,1],[1,0],[2,3],[3,2]]
@@ -409,8 +386,11 @@ def cov(especie_1, especie_2, especie_3, especie_4, classe, tipo1, tipo2):
                 i, j = x[0], x[1]
                 for y in comb_transv:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4, classe) -(
-q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe)))
+                    soma += (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_1*soma
             return cov
         else:
@@ -418,9 +398,11 @@ q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe))
                 i, j = x[0], x[1]
                 for y in comb_transv:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4, classe) -(
-                            q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3,
-                               especie_4, classe)))
+                    soma +=  (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_2*soma
             return cov
     elif tipo1 == tipo2 == 1:
@@ -430,9 +412,11 @@ q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe))
                 i, j = x[0], x[1]
                 for y in comb_transi:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4, classe) -(
-                            q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, 
-                               especie_4, classe)))
+                    soma +=  (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_1*soma
             return cov
         else:
@@ -440,9 +424,11 @@ q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe))
                 i, j = x[0], x[1]
                 for y in comb_transi:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4, classe) -(
-                            q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, 
-                               especie_3, especie_4, classe)))
+                    soma +=  (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_2*soma
             return cov
     elif tipo1 == 1 and tipo2 == 0:
@@ -452,9 +438,11 @@ q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe))
                 i, j = x[0], x[1]
                 for y in comb_transv:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4, classe) -(
-                            q_1(i, j, especie_1, especie_2, classe)*q_1(k, l,
-                               especie_3, especie_4, classe)))
+                    soma +=  (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_1*soma
             return cov
         else:
@@ -462,9 +450,11 @@ q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe))
                 i, j = x[0], x[1]
                 for y in comb_transv:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4, classe) -(
-                            q_1(i, j, especie_1, especie_2, classe)*q_1(k, l,
-                               especie_3, especie_4, classe)))
+                    soma +=  (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_2*soma
             return cov
     elif tipo1 == 0 and tipo2 == 1:
@@ -474,9 +464,11 @@ q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe))
                 i, j = x[0], x[1]
                 for y in comb_transi:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4 ,classe) -(
-                            q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, 
-                               especie_3, especie_4, classe)))
+                    soma +=  (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_1*soma
             return cov
         else:
@@ -484,78 +476,174 @@ q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, especie_3, especie_4, classe))
                 i, j = x[0], x[1]
                 for y in comb_transi:
                     k, l = y[0], y[1]
-                    soma += (q_2(i, j, k, l, especie_1, especie_2, especie_3, especie_4, classe) -(
-                            q_1(i, j, especie_1, especie_2, classe)*q_1(k, l, 
-                               especie_3, especie_4, classe)))
+                    soma +=  (q_2(t_I, t_J, t_K, t_L, f, alpha, beta, 
+                                 i, j, k, l, especie_1, especie_2, 
+                                 especie_3, especie_4, classe) -(q_1(f, t_I, alpha, beta, 
+                            i, j, especie_1, classe)*q_1(f, t_K, alpha, beta, 
+                                                   k, l, especie_3, classe)))
             cov = r_2*soma
             return cov
-        
+
+# vetor par =  [t1, t3, t4, t5, t6, f1, alpha1, beta1, f2, alpha2, beta2]       
+# V_var (f, beta, especie, classe, t_esp)
+# S_var (f, beta, alpha, especie, classe, t_esp)
+# se tipo == 0 --> V_k^(i)
+# se tipo == 1 --> S_k^(i)
             
-def cov_k (especie_1, especie_2, classe1, classe2, tipo1, tipo2):
+def cov_k (par, especie_1, especie_2, classe1, classe2, tipo1, tipo2):
     if classe1 == classe2:
+        if classe1 == 1:
+            f, alpha, beta = par[5], par[6], par[7]
+        elif classe1 == 2:
+            f, alpha, beta = par[8], par[9], par[10]
         if especie_1 == especie_2:
             soma = 0
             coef = (1/(num_especie - especie_1)**2)
             i , k = especie_1, especie_1
-            for j in range(i,num_especie):
+            if especie_1 == 1:
+                t_I, t_K = par[especie_1 - 1], par[especie_1 - 1]
+            elif especie_1 == 2:
+                t_I, t_K = t_2, t_2
+            elif especie_1 > 2:
+                t_I, t_K = par[especie_1 - 2], par[especie_1 - 2]
+            for j in range(i, num_especie):
                 for l in range(j + 1, num_especie):
-                    soma += cov(i,j + 1, k,l + 1, classe1, tipo1, tipo2)
-            total = coef*(((6-i)*(V_var(classe1, especie_1))) + soma)
-            return total
+                    if j + 1 == 2:
+                        t_J = t_2
+                    elif j + 1 > 2 and j + 1 < 7:
+                        t_J = par[(j + 1) - 2]
+                    elif j + 1 == 7:
+                        t_J = None
+                    if l + 1 == 2:
+                        t_L = t_2
+                    elif l + 1 > 2 and l + 1 < 7:
+                        t_L = par[(l + 1) - 2]
+                    elif l + 1 == 7:
+                        t_L = None
+                    if classe1 == 1:
+                        f, alpha, beta = par[5], par[6], par[7]
+                    elif classe1 == 2:
+                        f, alpha, beta = par[8], par[9], par[10]
+                    soma += (2*cov(t_I, t_J, t_K, t_L, i, j + 1, k, l + 1, classe1, tipo1, tipo2,
+                                f, alpha, beta))
+            if tipo1 == tipo2 and tipo1 == 0:
+                total = coef*(((7-i)*(V_var(f, beta, especie_1, classe1, t_I))) + soma)
+                return total
+            elif tipo1 == tipo2 and tipo1 == 1 :
+                total = coef*(((7-i)*(S_var(f, beta, alpha, especie_1, classe1, t_I))) + soma)
+                return total
+            elif tipo1 != tipo2:
+                total = coef*(((7-i)*cov_V_S(V_barra(f, beta, especie_1, classe1, t_I),
+                                S_barra(f, beta, alpha, especie_1, classe1, t_I), classe1)) 
+                        + soma)
+                return total
         elif especie_1 != especie_2:
             soma = 0
             coef = (1/(num_especie - especie_1))*(1/(num_especie - especie_2))
             i, k = especie_1, especie_2
+            if especie_1 == 1:
+                t_I = par[especie_1 - 1]
+            elif especie_1 == 2:
+                t_I = t_2
+            elif especie_1 > 2:
+                t_I = par[especie_1 - 2]
+            if especie_2 == 2:
+                t_K = t_2
+            elif especie_2 > 2 and especie_2 < 7:
+                t_K = par[especie_2 - 2]
             for j in range(i, num_especie):
                 for l in range(k, num_especie):
-                    soma += cov(i, j+1, k, l+1, classe1, tipo1, tipo2)
+                    if j + 1 == 2:
+                        t_J = t_2
+                    elif j + 1 > 2 and j + 1 < 7:
+                        t_J = par[(j + 1) - 2]
+                    elif j + 1 == 7:
+                        t_J = None
+                    if l + 1 == 2:
+                        t_L = t_2
+                    elif l + 1 > 2 and l + 1 < 7:
+                        t_L = par[(l + 1) - 2]
+                    elif l + 1 == 7:
+                        t_L = None
+                    soma += cov(t_I, t_J, t_K, t_L, i, j + 1, k, l + 1, classe1, tipo1, tipo2,
+                                f, alpha, beta)
             total = coef*soma
             return total
     elif classe1 != classe2:
         return 0
-
-# testando as covariancias 
-# Para V_1^(1) e V_1^(2)
-inicio = time.time()
-h = cov_k(1, 2, classe1 = 1, classe2 = 1, tipo1 = 0, tipo2 = 0)
-final  = time.time()
-final - inicio
-# Demora para o  calculo
-# Apesar da demora, testa-se a elaboração da matriz omega
-inicio = time.time()
-omega = sm.zeros(24)
-for i in range(0,omega.shape[1]):
-    for j in range(i, omega.shape[1]):
-        if j <= 5:
-            omega[i,j] = cov_k(i+1, j+1, classe1 = 1, classe2 = 1, tipo1 = 0, tipo2 = 0)
-            if i != j:
-                omega[j, i] = omega[i, j]
-        elif 6 <= j <= 11 and i <= 5:
-            omega[i,j] = cov_k(i+1, j - 5, classe1 = 1, classe2 = 1, tipo1 = 0, tipo2 = 1)
-            omega[j, i] = omega[i, j]
-        elif 12 <= j <= 23 and i <= 5:
-            omega[i, j] = 0
-            omega[j, i] = omega[i, j]
-        elif 6 <= j <= 11 and 6 <= i <= 11:
-            omega[i, j] = cov_k(i - 5, j - 5, classe1 = 1, classe2 = 1, tipo1 = 1, tipo2 = 1)
-            if i!= j:
-                omega[j, i] = omega[i, j]
-        elif 12 <= j <= 23 and 6 <= i <= 11:
-            omega[i, j]= 0
-            omega[j, i] = omega[i, j]
-        elif 12 <= j <= 17 and 12 <= i <= 17:
-            omega[i, j] = cov_k(i - 11, j - 11, classe1 = 2, classe2 = 2, tipo1 = 0, tipo2 = 0)
-            if i != j:
-                omega[j, i] = omega[i, j]
-        elif 18 <= j <= 23 and 12 <= i <= 17:
-            omega[i, j] = cov_k(i - 11, j - 17, classe1 = 2, classe2 = 2, tipo1 = 0, tipo2 = 1)
-            omega[j, i] = omega[i, j]
-        elif 18 <= j <= 23 and 18 <= i <= 23:
-            omega[i, j] = cov_k(i - 17, j - 17, classe1 = 2, classe2 = 2, tipo1 = 1, tipo2 = 1)
-            if i != j:
-                omega[j, i] = omega[i, j]
-final = time.time()
-tempo = final - inicio
-final - inicio
-determin = omega.det()
     
+# Testando 
+par_teste = np.array([80, 50, 30, 20, 10, 1, 0.6, 0.07, 0.5, 0.5, 0.4])
+cov_k(par_teste, 2, 5, 2, 2, 1, 0)
+
+a, b = 1, 1
+
+# teste do minimize
+def f(par):
+    fun = (par[0] - par[1])**2 + (par[1])**2
+    return fun
+
+x0 = np.array([0.5,0.2])
+res = minimize(f, x0)
+print(res.x)
+
+# cov_k (par, especie_1, especie_2, classe1, classe2, tipo1, tipo2)
+# Definindo R
+def R(par):
+    nvar = 24
+    omega = np.zeros((nvar,nvar))
+    # Montando a matriz omega
+    for i in range(0, nvar):
+        for j in range(i, nvar):
+            if 0 <= i <= 5 and 0 <= j <= 5:
+                omega[i,j] = cov_k(par, i + 1, j + 1, 1, 1, 0, 0)
+                if i != j:
+                    omega[j, i] = omega[i, j]
+            elif 0 <= i <= 5 and 6 <= j <= 11 :
+                if (j - 5) <  (i + 1):
+                    omega[i,j] = cov_k(par, j - 5, i + 1, 1, 1, 1, 0)
+                    if i != j:
+                        omega[j, i] = omega[i, j]
+                elif (j - 5) >= (i + 1):
+                    omega[i, j] = cov_k(par, i + 1, j - 5, 1, 1, 0, 1)
+                    if i != j:
+                        omega[j, i] = omega[i, j]
+            elif 0 <= i <= 5 and j >= 12:
+                omega[i, j] = 0
+                omega[j, i] = 0
+            elif 6 <= i <= 11 and 6 <= j <= 11:
+                omega[i ,j] = cov_k(par, i - 5, j - 5, 1, 1, 1, 1)
+                if i != j:
+                    omega[j, i] = omega[i, j]
+            elif 6 <= i <= 11 and j >= 12:
+                omega[i, j] = 0
+                omega[j, i] = 0
+            elif 12 <= i <= 17 and 12 <= j <= 17:
+                omega[i, j] = cov_k(par, i - 11, j - 11, 2, 2, 0, 0)
+                if i != j:
+                    omega[j, i] = omega[i, j]
+            elif 12 <= i <= 17 and 18 <= j <= 23:
+                if (j - 17) < (i - 11):
+                    omega[i, j] = cov_k(par, j - 17, i - 11,2, 2, 1, 0)
+                    if i != j:
+                        omega[j, i] = omega[i, j]
+                elif (j - 17) >= (i - 11):
+                    omega[i, j] = cov_k(par, i - 11, j - 17, 2, 2, 0, 1)
+                    if i != j:
+                        omega[j, i] = omega[i, j]
+            elif 18 <= i <= 23 and 18 <= j <= 23:
+                omega[i, j] = cov_k(par, i - 17, j - 17, 2, 2, 1, 1)
+                if i != j:
+                    omega[j, i]  = omega[i, j]
+    # invertendo omega
+    omega
+    omega_inv = np.linalg.inv(omega)
+    print(np.dot(omega, omega_inv))
+    # definindo o vetor de médias
+    return omega_inv
+
+inicio = time.time()
+R(par_teste)
+fim = time.time()
+tempo = fim - inicio
+
