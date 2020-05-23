@@ -74,18 +74,19 @@ class Especie:
 
 S0 = Especie(None, np.full(2,None), minha_priori = priori)
 S6 = Especie(S0, np.full(2,None), meu_tempo = 20)
-S1 = Especie(S6, np.array([1,2]), meu_tempo = 20)
-S2 = Especie(S6, np.array([0,2]), meu_tempo = 10)
+S1 = Especie(S6, np.array([2,2]), meu_tempo = 0.12)
+S2 = Especie(S6, np.array([1,2]), meu_tempo = 0.6)
 S8 = Especie(S0, np.full(2,None), meu_tempo = 30)
-S3 = Especie(S8, np.array([0,3]), meu_tempo = 10)
-S7 = Especie(S8, np.full(2,None), meu_tempo = 30)
-S4 = Especie(S7, np.array([2,2]), meu_tempo = 10)
-S5 = Especie(S7, np.array([1,3]), meu_tempo = 20)
+S3 = Especie(S8, np.array([0,3]), meu_tempo = 0.4)
+S7 = Especie(S8, np.full(2,None), meu_tempo = 15)
+S4 = Especie(S7, np.array([3,2]), meu_tempo = 0.4)
+S5 = Especie(S7, np.array([2,1]), meu_tempo = 0.6)
 S0.cria_L_condicional_vetor()
 print(S1.trs)
 print(S1.P_trs)
 print(S0.P_trs)
 print(S6.L_condicional)
+print(S6.P_trs)
 print(S0.L_condicional)
 print(S0.L_arvore)
 
@@ -111,11 +112,10 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
         no_recalc = pai_folha
         no_recalc.recalc[pos_codon] = True
         pai_folha = pai_folha.pai
-    pai_folha.recalc[pos_codon] = True
     folha.valor[pos_codon] =  val_codon
     raiz.cria_L_condicional_vetor()
     P_conj = raiz.L_arvore
-    print(P_conj[0, pos_codon])
+    P_conj = P_conj[0, pos_codon]
     P_soma = 0
     # ja temos todas os nos com exceção do que tem desconhecido calculado
     # e não precisamos recalcular para diferentes valores de S1
@@ -124,9 +124,9 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
     for i in range(n_base):
         folha.valor[pos_codon] = np.array([i])     #para mais de um codon, complica-se a escolha
         no_recalc.cria_L_condicional_vetor()
-        raiz.L_condicional = np.multiply(raiz.filhos[0].P_trs, raiz.filhos[1].P_trs)
+        raiz.L_condicional = np.multiply(raiz.filhos[0].P_trs[pos_codon], 
+                                         raiz.filhos[1].P_trs[pos_codon])
         P_soma += np.dot(raiz.L_condicional, raiz.priori)
-    print(P_soma)
     P_cond = P_conj/P_soma
     return(P_cond)
 
@@ -140,13 +140,13 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
 
 S0 = Especie(None, np.full(2,None), minha_priori = priori)
 S6 = Especie(S0, np.full(2,None), meu_tempo = 20)
-S1 = Especie(S6, np.array([1,2]), meu_tempo = 20)
-S2 = Especie(S6, np.array([0,2]), meu_tempo = 10)
+S1 = Especie(S6, np.array([1,2]), meu_tempo = 0.2)
+S2 = Especie(S6, np.array([0,2]), meu_tempo = 0.7)
 S8 = Especie(S0, np.full(2,None), meu_tempo = 30)
-S3 = Especie(S8, np.array([0,3]), meu_tempo = 10)
-S7 = Especie(S8, np.full(2,None), meu_tempo = 30)
-S4 = Especie(S7, np.array([None,2]), meu_tempo = 10)
-S5 = Especie(S7, np.array([1,3]), meu_tempo = 20)
+S3 = Especie(S8, np.array([0,3]), meu_tempo = 0.5)
+S7 = Especie(S8, np.full(2,None), meu_tempo = 20)
+S4 = Especie(S7, np.array([None,2]), meu_tempo = 0.25)
+S5 = Especie(S7, np.array([1,3]), meu_tempo = 0.12)
 print(prob_condicional(S0, S4, 0,0))
 print(prob_condicional(S0, S4, 1,0))
 print(prob_condicional(S0, S4, 2,0))
