@@ -44,32 +44,30 @@ class Especie:
     def cria_L_condicional(self):
         if(not(self.filhos)):# self eh uma folha
             if np.count_nonzero(self.recalc) > 0 or np.all(self.L_condicional) == None:
-                valor = np.zeros((self.num_codon,n_base))
+                valor = np.zeros((n_base, self.num_codon))
                 for i in range(self.num_codon):
                     if list(self.recalc)[i] == True or self.prim_calc == True:
-                        valor[(i,self.valor[i])] =  1
+                        valor[(self.valor[i], i)] =  1
                 self.L_condicional = valor
                 self.prim_calc = np.full(self.num_codon, False)
         elif(not(self.pai)): # self eh a raiz
             for filho in self.filhos:
                 filho.cria_L_condicional()
             self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
-            self.P_trs = np.multiply(self.priori.transpose(), self.L_condicional)
-            self.L_arvore = np.dot(self.L_condicional, self.priori)
+            self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
         else: # self eh no interno
             for filho in self.filhos:
                 filho.cria_L_condicional()
-                filho.P_trs = np.dot(filho.L_condicional,filho.trs)
+                filho.P_trs = np.dot(filho.trs, filho.L_condicional)
             if np.all(self.L_condicional) == None and self.prim_calc == True:
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
-                self.P_trs = np.dot(self.L_condicional, self.trs)
+                self.P_trs = np.dot(self.trs, self.L_condicional)
                 self.prim_calc = False    
             elif np.count_nonzero(self.recalc) > 0 and self.prim_calc == False:
                 A = np.where(self.recalc)[0]
-                self.L_condicional[A] = np.multiply(self.filhos[0].P_trs[A], 
-                                  self.filhos[1].P_trs[A])
-                self.P_trs[A] = np.dot(self.L_condicional[A], self.trs)
-
+                self.L_condicional[:, A] = np.multiply(self.filhos[0].P_trs[:, A], 
+                                  self.filhos[1].P_trs[:, A])
+                self.P_trs[:, A] = np.dot( self.trs, self.L_condicional[:, A])
 
 
 S0 = Especie(None, np.full(2,None), minha_priori = priori)
@@ -79,11 +77,12 @@ S2 = Especie(S6, np.array([1,2]), meu_tempo = 0.6)
 S8 = Especie(S0, np.full(2,None), meu_tempo = 30)
 S3 = Especie(S8, np.array([0,3]), meu_tempo = 0.4)
 S7 = Especie(S8, np.full(2,None), meu_tempo = 15)
-S4 = Especie(S7, np.array([3,2]), meu_tempo = 0.4)
+S4 = Especie(S7, np.array([1,2]), meu_tempo = 0.4)
 S5 = Especie(S7, np.array([2,1]), meu_tempo = 0.6)
 S0.cria_L_condicional_vetor()
 print(S1.trs)
 print(S1.P_trs)
+print(S2.P_trs)
 print(S0.P_trs)
 print(S6.L_condicional)
 print(S6.P_trs)
@@ -115,7 +114,7 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
     folha.valor[pos_codon] =  val_codon
     raiz.cria_L_condicional_vetor()
     P_conj = raiz.L_arvore
-    P_conj = P_conj[0, pos_codon]
+    P_conj = P_conj[pos_codon, 0]
     P_soma = 0
     # ja temos todas os nos com exceção do que tem desconhecido calculado
     # e não precisamos recalcular para diferentes valores de S1
@@ -124,9 +123,9 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
     for i in range(n_base):
         folha.valor[pos_codon] = np.array([i])     #para mais de um codon, complica-se a escolha
         no_recalc.cria_L_condicional_vetor()
-        raiz.L_condicional = np.multiply(raiz.filhos[0].P_trs[pos_codon], 
-                                         raiz.filhos[1].P_trs[pos_codon])
-        P_soma += np.dot(raiz.L_condicional, raiz.priori)
+        raiz.L_condicional = np.multiply(raiz.filhos[0].P_trs[:, pos_codon], 
+                                         raiz.filhos[1].P_trs[:, pos_codon])
+        P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional)
     P_cond = P_conj/P_soma
     return(P_cond)
 
@@ -140,17 +139,19 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
 
 S0 = Especie(None, np.full(2,None), minha_priori = priori)
 S6 = Especie(S0, np.full(2,None), meu_tempo = 20)
-S1 = Especie(S6, np.array([1,2]), meu_tempo = 0.2)
-S2 = Especie(S6, np.array([0,2]), meu_tempo = 0.7)
+S1 = Especie(S6, np.array([1,2]), meu_tempo = 12)
+S2 = Especie(S6, np.array([0,2]), meu_tempo = 10)
 S8 = Especie(S0, np.full(2,None), meu_tempo = 30)
-S3 = Especie(S8, np.array([0,3]), meu_tempo = 0.5)
+S3 = Especie(S8, np.array([0,3]), meu_tempo = 5)
 S7 = Especie(S8, np.full(2,None), meu_tempo = 20)
-S4 = Especie(S7, np.array([None,2]), meu_tempo = 0.25)
-S5 = Especie(S7, np.array([1,3]), meu_tempo = 0.12)
+S4 = Especie(S7, np.array([None,2]), meu_tempo = 10)
+S5 = Especie(S7, np.array([1,3]), meu_tempo = 3)
 print(prob_condicional(S0, S4, 0,0))
 print(prob_condicional(S0, S4, 1,0))
 print(prob_condicional(S0, S4, 2,0))
 print(prob_condicional(S0, S4, 3,0))
+print(prob_condicional(S0, S4, 0,0) + prob_condicional(S0, S4, 1,0) +
+      prob_condicional(S0, S4, 2,0) + prob_condicional(S0, S4, 3,0))
 
 
 
@@ -298,11 +299,10 @@ class Transforma_arv:
       p = 1 - q
       K = self.get_num_aresta()
       self.L_condicional_g_vetor(especie_1,especie_aresta)
-      A = np.dot(np.multiply(self.no(especie_1).L_condicional,
-                             self.no(especie_aresta).L_condicional)
-      ,self.no(especie_1).priori)
-      B = np.multiply(np.dot(self.no(especie_1).L_condicional,self.no(especie_1).priori),
-      np.dot(self.no(especie_aresta).L_condicional,self.no(especie_aresta).priori))
+      A = np.dot(self.no(especie_1).priori.transpose(), np.multiply(self.no(especie_1).L_condicional,
+                             self.no(especie_aresta).L_condicional))
+      B = np.multiply(np.dot(self.no(especie_1).priori.transpose(), self.no(especie_1).L_condicional),
+      np.dot(self.no(especie_aresta).priori.transpose(), self.no(especie_aresta).L_condicional))
       v_atual = -(np.log(1 - ((1/K)*(np.sum((p*B)/((A*q) + (B*p)))))))
       self.muda_peso(especie_1,especie_aresta,v_atual)
       erro = abs(v_atual - v)
@@ -316,14 +316,15 @@ class Transforma_arv:
         if especie_2 == None:  #especie_1 � a que vai, especie_2 � a que vem, especie_aresta 
             for especie in self.no(especie_1).indices_vizinhos():
                 self.L_condicional_g(especie, especie_aresta,especie_1)
-                self.no(especie).P_trs = np.dot(self.no(especie).L_condicional,self.no(especie).trs)
+                self.no(especie).P_trs = np.dot(self.no(especie).trs, self.no(especie).L_condicional)
             viz = np.array(self.no(especie_1).indices_vizinhos())
             viz_temp = viz[viz == especie_aresta]     #aresta de interesse isolada
             viz = viz[viz != especie_aresta]
             if not (viz.size):
               self.no(especie_1).L_condicional = especie_1.L_condicional
             else:
-              self.no(especie_1).L_condicional = np.multiply(self.no(viz[0]).P_trs,self.no(viz[1]).P_trs)
+              self.no(especie_1).L_condicional = np.multiply(self.no(viz[0]).P_trs,
+                      self.no(viz[1]).P_trs)
         else:
             viz = np.array(self.no(especie_1).indices_vizinhos())
             viz_temp = list((viz[viz == especie_2]))
@@ -335,19 +336,19 @@ class Transforma_arv:
             else:   #eh interno
                 for especie in viz:
                     self.L_condicional_g(especie, especie_aresta, especie_1)
-                    self.no(especie).P_trs = np.dot(self.no(especie).L_condicional,self.no(especie).trs)
+                    self.no(especie).P_trs = np.dot(self.no(especie).trs, self.no(especie).L_condicional)
                 viz = viz[viz != especie_2]
                 self.no(especie_1).L_condicional = np.multiply(self.no(viz[0]).P_trs,self.no(viz[1]).P_trs)
 
 
-#g = Transforma_arv(S0)
-#g.transforma_grafo(S0)
-#g.L_condicional_g_vetor(S8,S7)
-#print(g.no(S1).L_condicional)
-#print(g.no(S7).L_condicional)
-#print(g.no(S8).L_condicional)
-#print(g.maxim_L_vetor((10**(-6))))
-#g.no(S5).retorna_peso(S7)
+g = Transforma_arv(S0)
+g.transforma_grafo(S0)
+g.L_condicional_g_vetor(S8,S7)
+print(g.no(S1).L_condicional)
+print(g.no(S7).L_condicional)
+print(g.no(S8).L_condicional)
+print(g.maxim_L_vetor((10**(-6))))
+# g.no(S5).retorna_peso(S7)
 
 ### posteriormente criar classe do tipo "arvore"
 ### predição só use valores temporarios (val.temp)
