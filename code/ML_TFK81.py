@@ -9,8 +9,8 @@ import math
 n_base = 4
 u = 1  #taxa de substituição de base por tempo
 # priori para a raiz
-#priori = np.matrix(np.full((n_base, 1), 1.0/n_base))
-priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
+priori = np.matrix(np.full((n_base, 1), 1.0/n_base))
+# priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
 
 
 class Especie:
@@ -21,8 +21,8 @@ class Especie:
         self.num_codon = self.valor.size
         self.prim_calc = True
         self.recalc = np.full(self.num_codon, False)
-        self.L_condicional = np.full((self.num_codon,n_base), None)
-        self.P_trs = np.full((self.num_codon,n_base), None)
+        self.L_condicional = None
+        self.P_trs = None
         if(meu_pai):
           meu_pai.filhos.append(self)
           self.priori = meu_pai.priori
@@ -70,17 +70,19 @@ class Especie:
                 self.P_trs[:, A] = np.dot( self.trs, self.L_condicional[:, A])
 
 
-S0 = Especie(None, np.full(2,None), minha_priori = priori)
-S6 = Especie(S0, np.full(2,None), meu_tempo = 20)
-S1 = Especie(S6, np.array([2,2]), meu_tempo = 0.12)
-S2 = Especie(S6, np.array([1,2]), meu_tempo = 0.6)
-S8 = Especie(S0, np.full(2,None), meu_tempo = 30)
-S3 = Especie(S8, np.array([0,3]), meu_tempo = 0.4)
-S7 = Especie(S8, np.full(2,None), meu_tempo = 15)
-S4 = Especie(S7, np.array([1,2]), meu_tempo = 0.4)
-S5 = Especie(S7, np.array([2,1]), meu_tempo = 0.6)
+S0 = Especie(None, np.full(1,None), minha_priori = priori)
+S6 = Especie(S0, np.full(1,None), meu_tempo = 10)
+S1 = Especie(S6, np.array([1]), meu_tempo = 1)
+S2 = Especie(S6, np.array([0]), meu_tempo = 2)
+S8 = Especie(S0, np.full(1,None), meu_tempo = 30)
+S3 = Especie(S8, np.array([0]), meu_tempo = 0.4)
+S7 = Especie(S8, np.full(1,None), meu_tempo = 15)
+S4 = Especie(S7, np.array([1]), meu_tempo = 0.4)
+S5 = Especie(S7, np.array([2]), meu_tempo = 0.6)
 S0.cria_L_condicional_vetor()
 print(S1.trs)
+print(S2.trs)
+print(S1.L_condicional)
 print(S1.P_trs)
 print(S2.P_trs)
 print(S0.P_trs)
@@ -88,6 +90,7 @@ print(S6.L_condicional)
 print(S6.P_trs)
 print(S0.L_condicional)
 print(S0.L_arvore)
+print(S8.L_condicional)
 
 
 # testando o caso condicional com S1 = 'None' para apenas um codon
@@ -181,9 +184,9 @@ class No:
         self.indice = indice
         self.valor = atributos
         self.num_codon = self.valor.size
-        self.L_condicional = np.full((self.num_codon,n_base), None)
+        self.L_condicional = None
         self.tempo = None
-        self.P_trs = np.full((self.num_codon,n_base), None)
+        self.P_trs = None
         self.priori = priori
         self.trs = None
         
@@ -221,10 +224,8 @@ class No:
 
 
 class Transforma_arv:
-    def __init__(self, raiz):
+    def __init__(self):
         self.dici_nos = {}
-        
-    
     def transforma_grafo(self,raiz):
         if (not(raiz.pai)):  #eh raiz
             for filho in raiz.filhos:
@@ -341,10 +342,10 @@ class Transforma_arv:
                 self.no(especie_1).L_condicional = np.multiply(self.no(viz[0]).P_trs,self.no(viz[1]).P_trs)
 
 
-g = Transforma_arv(S0)
+g = Transforma_arv()
 g.transforma_grafo(S0)
 g.L_condicional_g_vetor(S8,S7)
-print(g.no(S1).L_condicional)
+print(g.no(S1).P_trs)
 print(g.no(S7).L_condicional)
 print(g.no(S8).L_condicional)
 print(g.maxim_L_vetor((10**(-6))))
