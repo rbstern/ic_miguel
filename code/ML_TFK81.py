@@ -194,17 +194,9 @@ class No:
             self.dici_vizinhos = {}
         else:
             self.dici_vizinhos = vizinhos
-        
-        if atributos is None:
-            self.dici_atributos = {}
-        else:
-            self.dici_atributos = atributos
             
     def adiciona_vizinho(self, indice_viz, peso=1):
         self.dici_vizinhos[indice_viz] = peso
-    
-    def retorna_atributos(self):
-        return self.dici_atributos
     
     def indices_vizinhos(self):
         return list(self.dici_vizinhos.keys())
@@ -223,7 +215,7 @@ class No:
         
 
 
-class Transforma_arv:
+class Grafo:
     def __init__(self):
         self.dici_nos = {}
     def transforma_grafo(self,raiz):
@@ -247,10 +239,8 @@ class Transforma_arv:
                 self.dici_nos[filho] = no
             self.dici_nos[raiz].adiciona_vizinho(raiz.filhos[0],raiz.filhos[0].tempo)
             self.dici_nos[raiz].adiciona_vizinho(raiz.filhos[1], raiz.filhos[1].tempo)
-            
-            if (raiz.pai is not None):
-                self.dici_nos[raiz.filhos[0]].adiciona_vizinho(raiz, raiz.filhos[0].tempo)
-                self.dici_nos[raiz.filhos[1]].adiciona_vizinho(raiz, raiz.filhos[1].tempo)
+            self.dici_nos[raiz.filhos[0]].adiciona_vizinho(raiz, raiz.filhos[0].tempo)
+            self.dici_nos[raiz.filhos[1]].adiciona_vizinho(raiz, raiz.filhos[1].tempo)
                 
             self.transforma_grafo(raiz.filhos[0])
             self.transforma_grafo(raiz.filhos[1])
@@ -313,7 +303,7 @@ class Transforma_arv:
     def L_condicional_g_vetor(self,especie_1, especie_aresta, especie_2 = None):
         self.L_condicional_g(especie_1, especie_aresta, especie_2)
     
-    def L_condicional_g(self,especie_1, especie_aresta,especie_2):  
+    def L_condicional_g(self,especie_1, especie_aresta, especie_2):  
         if especie_2 == None:  #especie_1 � a que vai, especie_2 � a que vem, especie_aresta 
             for especie in self.no(especie_1).indices_vizinhos():
                 self.L_condicional_g(especie, especie_aresta,especie_1)
@@ -337,12 +327,14 @@ class Transforma_arv:
             else:   #eh interno
                 for especie in viz:
                     self.L_condicional_g(especie, especie_aresta, especie_1)
-                    self.no(especie).P_trs = np.dot(self.no(especie).trs, self.no(especie).L_condicional)
+                    self.no(especie).P_trs = np.dot(self.no(especie).trs, 
+                            self.no(especie).L_condicional)
                 viz = viz[viz != especie_2]
-                self.no(especie_1).L_condicional = np.multiply(self.no(viz[0]).P_trs,self.no(viz[1]).P_trs)
+                self.no(especie_1).L_condicional = np.multiply(self.no(viz[0]).P_trs,
+                        self.no(viz[1]).P_trs)
 
 
-g = Transforma_arv()
+g = Grafo()
 g.transforma_grafo(S0)
 g.L_condicional_g_vetor(S8,S7)
 print(g.no(S1).P_trs)
