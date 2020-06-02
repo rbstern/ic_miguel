@@ -307,7 +307,9 @@ class Grafo:
         if especie_2 == None:  #especie_1 � a que vai, especie_2 � a que vem, especie_aresta 
             for especie in self.no(especie_1).indices_vizinhos():
                 self.L_condicional_g(especie, especie_aresta,especie_1)
-                self.no(especie).P_trs = np.dot(self.no(especie).trs, self.no(especie).L_condicional)
+                if especie != especie_aresta:
+                    self.no(especie).P_trs = np.dot(self.no(especie).trs, 
+                            self.no(especie).L_condicional)
             viz = np.array(self.no(especie_1).indices_vizinhos())
             viz_temp = viz[viz == especie_aresta]     #aresta de interesse isolada
             viz = viz[viz != especie_aresta]
