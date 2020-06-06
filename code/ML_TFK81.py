@@ -300,24 +300,26 @@ class Grafo:
       lista_nos = self.nos_grafo()
       lista_repetidos = []
       contador = 0
-      for no in lista_nos:
-        viz = self.no(no).indices_vizinhos()
-        tam = len(viz)
-        if lista_repetidos == []:
-          for i in range(tam):
-            erros[contador] = self.maxim_L(no,viz[i])
-            contador += 1
-        else:
-          for i in range(tam):
-            if viz[i] not in lista_repetidos:
-              erros [contador] = self.maxim_L(no,viz[i])
-              contador += 1
-        lista_repetidos.append(no)
-      it += 1
-      if np.max(erros) > e:
-        return(self.maxim_L_vetor(e,it))
-      else:
-        return([erros,it])
+      # inicializando o laço
+      while True:
+          lista_repetidos = []
+          contador = 0
+          for no in lista_nos:
+            viz = self.no(no).indices_vizinhos()
+            tam = len(viz)
+            if lista_repetidos == []:
+              for i in range(tam):
+                erros[contador] = self.maxim_L(no,viz[i])
+                contador += 1
+            else:
+              for i in range(tam):
+                if viz[i] not in lista_repetidos:
+                  erros [contador] = self.maxim_L(no,viz[i])
+                  contador += 1
+            lista_repetidos.append(no)
+          it += 1
+          if np.max(erros) <= e:
+              return([erros, it])
       
     def maxim_L(self,especie_1,especie_aresta):
       v = self.no(especie_1).retorna_peso(especie_aresta)
