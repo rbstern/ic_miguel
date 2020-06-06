@@ -21,6 +21,7 @@ class Especie:
         self.num_codon = self.valor.size
         self.prim_calc = True
         self.recalc = np.full(self.num_codon, False)
+        self.mudou_tempo = False
         self.L_condicional = None
         self.P_trs = None
         if(meu_pai):
@@ -49,17 +50,18 @@ class Especie:
                     if list(self.recalc)[i] == True or self.prim_calc == True:
                         valor[(self.valor[i], i)] =  1
                 self.L_condicional = valor
-                self.prim_calc = np.full(self.num_codon, False)
+                self.prim_calc = False
         elif(not(self.pai)): # self eh a raiz
             for filho in self.filhos:
                 filho.cria_L_condicional()
             self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
             self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
+            self.prim_calc = False
         else: # self eh no interno
             for filho in self.filhos:
                 filho.cria_L_condicional()
                 filho.P_trs = np.dot(filho.trs, filho.L_condicional)
-            if np.all(self.L_condicional) == None and self.prim_calc == True:
+            if (np.all(self.L_condicional) == None and self.prim_calc == True):
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
                 self.P_trs = np.dot(self.trs, self.L_condicional)
                 self.prim_calc = False    
@@ -68,20 +70,46 @@ class Especie:
                 self.L_condicional[:, A] = np.multiply(self.filhos[0].P_trs[:, A], 
                                   self.filhos[1].P_trs[:, A])
                 self.P_trs[:, A] = np.dot( self.trs, self.L_condicional[:, A])
+                
+    def modifica_L_condicional(self): # Ja calculou L_condicional antes
+        if self.prim_calc == False and self.mudou_tempo == True:
+            if(not(self.pai)):
+                for filho in self.filhos:
+                    filho.modifica_L_condicional()
+                self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
+                self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
+                print(self.L_arvore)
+            else:
+                for filho in self.filhos:
+                    if (not(filho.filhos)):
+                        filho.P_trs = np.dot(filho.trs, filho.L_condicional)
+                    else:
+                        filho.modifica_L_condicional
+                        filho.P_trs = np.dot(filho.trs, filho.L_condicional)
+                self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
+                self.P_trs = np.dot(self.trs, self.L_condicional)
+        else:
+            if(not(self.pai)):
+                self.L_arvore = np.zeros(self.num_codon)
+                self.cria_L_condicional_vetor()
+            else:
+                self.cria_L_condicional
+            
+            
+    
+                
 
 
-S0 = Especie(None, np.full(1,None), minha_priori = priori)
-S6 = Especie(S0, np.full(1,None), meu_tempo = 10)
-S1 = Especie(S6, np.array([1]), meu_tempo = 1)
-S2 = Especie(S6, np.array([0]), meu_tempo = 2)
-S8 = Especie(S0, np.full(1,None), meu_tempo = 30)
-S3 = Especie(S8, np.array([0]), meu_tempo = 0.4)
-S7 = Especie(S8, np.full(1,None), meu_tempo = 15)
-S4 = Especie(S7, np.array([1]), meu_tempo = 0.4)
-S5 = Especie(S7, np.array([2]), meu_tempo = 0.6)
+S0 = Especie(None, np.full(8,None), minha_priori = priori)
+S6 = Especie(S0, np.full(8,None), meu_tempo = 10)
+S1 = Especie(S6, np.array([1, 2, 0, 3, 1, 0, 2, 0]), meu_tempo = 2)
+S2 = Especie(S6, np.array([0, 3, 1, 1, 2, 1, 0, 0]), meu_tempo = 4)
+S8 = Especie(S0, np.full(8,None), meu_tempo = 15)
+S3 = Especie(S8, np.array([0, 1, 1, 2, 2, 3, 3, 0]), meu_tempo = 8)
+S7 = Especie(S8, np.full(8,None), meu_tempo = 14)
+S4 = Especie(S7, np.array([1, 2, 3, 0, 1, 1, 0, 2]), meu_tempo = 4)
+S5 = Especie(S7, np.array([2, 3, 0, 1, 0, 2, 2, 1]), meu_tempo = 5)
 S0.cria_L_condicional_vetor()
-print(S1.trs)
-print(S2.trs)
 print(S1.L_condicional)
 print(S1.P_trs)
 print(S2.P_trs)
@@ -91,6 +119,9 @@ print(S6.P_trs)
 print(S0.L_condicional)
 print(S0.L_arvore)
 print(S8.L_condicional)
+
+# Após modificação
+S0.modifica_L_condicional()
 
 
 # testando o caso condicional com S1 = 'None' para apenas um codon
@@ -141,10 +172,10 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
 # prob_condicional(S0, S1, 2) + prob_condicional(S0, S1, 3))
 
 S0 = Especie(None, np.full(2,None), minha_priori = priori)
-S6 = Especie(S0, np.full(2,None), meu_tempo = 20)
+S6 = Especie(S0, np.full(2,None), meu_tempo = 15)
 S1 = Especie(S6, np.array([1,2]), meu_tempo = 12)
 S2 = Especie(S6, np.array([0,2]), meu_tempo = 10)
-S8 = Especie(S0, np.full(2,None), meu_tempo = 30)
+S8 = Especie(S0, np.full(2,None), meu_tempo = 10)
 S3 = Especie(S8, np.array([0,3]), meu_tempo = 5)
 S7 = Especie(S8, np.full(2,None), meu_tempo = 20)
 S4 = Especie(S7, np.array([None,2]), meu_tempo = 10)
@@ -218,6 +249,7 @@ class No:
 class Grafo:
     def __init__(self):
         self.dici_nos = {}
+        self.num_codon = None
     def transforma_grafo(self,raiz):
         if (not(raiz.pai)):  #eh raiz
             for filho in raiz.filhos:
@@ -232,6 +264,8 @@ class Grafo:
             
         elif(not(raiz.filhos)):   #eh folha
             self.dici_nos[raiz].valor = raiz.valor
+            if self.num_codon == None:
+                self.num_codon = self.dici_nos[raiz].num_codon
             
         elif(raiz.filhos is not None):     #eh interno
             for filho in raiz.filhos:
@@ -259,6 +293,7 @@ class Grafo:
     def muda_peso(self,indice_1,indice_2,peso_novo):
       self.no(indice_1).dici_vizinhos[indice_2] = peso_novo
       self.no(indice_2).dici_vizinhos[indice_1] = peso_novo
+      
     
     def maxim_L_vetor(self,e, it = 0):
       erros = np.zeros(self.get_num_aresta())
@@ -288,7 +323,7 @@ class Grafo:
       v = self.no(especie_1).retorna_peso(especie_aresta)
       q = math.exp(-v)
       p = 1 - q
-      K = self.get_num_aresta()
+      K = self.num_codon
       self.L_condicional_g_vetor(especie_1,especie_aresta)
       A = np.dot(self.no(especie_1).priori.transpose(), np.multiply(self.no(especie_1).L_condicional,
                              self.no(especie_aresta).L_condicional))
@@ -334,15 +369,44 @@ class Grafo:
                 viz = viz[viz != especie_2]
                 self.no(especie_1).L_condicional = np.multiply(self.no(viz[0]).P_trs,
                         self.no(viz[1]).P_trs)
+        
+    def muda_tempo_arv(self):
+        lista_nos = self.nos_grafo()
+        i = 0
+        while i < len(lista_nos):
+            if (lista_nos[i]).pai.pai == None:
+                if (lista_nos[i]) == (lista_nos[i]).pai.filhos[0]:
+                    lista_nos[i].tempo = (self.no(lista_nos[i]).retorna_peso(
+                            lista_nos[i].pai.filhos[1]))*1/2
+                    lista_nos[i].pai.mudou_tempo = True
+                    lista_nos[i].mudou_tempo = True
+                    lista_nos[i].trs = lista_nos[i].cria_transicao()
+                    i += 1
+                else:
+                    lista_nos[i].tempo = (self.no(lista_nos[i]).retorna_peso(
+                            lista_nos[i].pai.filhos[0]))*1/2
+                    lista_nos[i].mudou_tempo = True
+                    lista_nos[i].trs = lista_nos[i].cria_transicao()
+                    i += 1
+            
+            else:
+                lista_nos[i].tempo = self.no(lista_nos[i]).retorna_peso(lista_nos[i].pai)
+                lista_nos[i].mudou_tempo = True
+                lista_nos[i].trs = lista_nos[i].cria_transicao()
+                i += 1
+            
 
 
 g = Grafo()
 g.transforma_grafo(S0)
-g.L_condicional_g_vetor(S8,S7)
+print(g.nos_grafo())
+print(g.no())
+g.L_condicional_g_vetor(S8,S3)
 print(g.no(S1).P_trs)
-print(g.no(S7).L_condicional)
+print(g.no(S3).L_condicional)
 print(g.no(S8).L_condicional)
-print(g.maxim_L_vetor((10**(-6))))
+g.maxim_L_vetor((10**(-4)))
+g.muda_tempo_arv()
 # g.no(S5).retorna_peso(S7)
 
 ### posteriormente criar classe do tipo "arvore"
