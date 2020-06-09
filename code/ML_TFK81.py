@@ -94,6 +94,45 @@ class Especie:
                 self.P_trs[:, A] = np.dot(self.trs, self.L_condicional[:, A])
                 if self.change_recalc == True:
                     self.recalc = np.full(self.num_codon, False)
+    def prob_condicional(self, val_codon, pos_codon):
+        valor_original = self.valor[pos_codon]
+        pai_folha = self.pai
+        self.recalc[pos_codon] = True
+        self.change_recalc = False
+        while pai_folha.pai != None:
+            no_recalc = pai_folha
+            no_recalc.change_recalc = False
+            no_recalc.recalc[pos_codon] = True
+            pai_folha = pai_folha.pai
+        raiz = pai_folha
+        self.valor[pos_codon] =  val_codon
+        if raiz.prim_calc == True:
+            raiz.cria_L_condicional_vetor()
+            P_conj = raiz.L_arvore[0, pos_codon]
+            print(P_conj)
+        else:
+            raiz.recalc[pos_codon] = True
+            raiz.cria_L_condicional_vetor()
+            P_conj = raiz.L_arvore[0, pos_codon]
+            print(P_conj)
+        P_soma = 0
+    # ja temos todas os nos com exceção do que tem desconhecido calculado
+    # e não precisamos recalcular para diferentes valores de S1
+    #vetor de combinações
+    #combin = np.tile(h,folha.num_codon).reshape(folha.num_codon,n_base), combinatorias extensas
+        for i in range(n_base):
+            self.valor[pos_codon] = i    #para mais de um codon, complica-se a escolha
+            if i == (n_base - 1):
+                no_recalc.change_recalc = True  
+                no_recalc.cria_L_condicional()
+            else:
+                no_recalc.cria_L_condicional()
+            raiz.L_condicional[:, pos_codon] = np.multiply(raiz.filhos[0].P_trs[:, pos_codon], 
+                                         raiz.filhos[1].P_trs[:, pos_codon])
+            P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional[:, pos_codon])
+        P_cond = P_conj/P_soma
+        self.valor[pos_codon] = valor_original
+        return(P_cond)
                 
     def modifica_L_condicional(self): # Ja calculou L_condicional antes
         if self.prim_calc == False and self.mudou_tempo == True:
@@ -157,52 +196,6 @@ S0.modifica_L_condicional()
 #S5 = Especie(S7, np.array([3]), meu_tempo = 0.3)
 
 
-def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
-    # definimos fx1,x2,x3,x4 como S0.cria_L_condicional_vetor()
-    # criando fx1,x2,x3,x4 para o valor fixado em val_codon
-    pai_folha = folha.pai
-    folha.recalc[pos_codon] = True
-    folha.change_recalc = False
-    while pai_folha is not raiz:
-        no_recalc = pai_folha
-        no_recalc.change_recalc = False
-        no_recalc.recalc[pos_codon] = True
-        pai_folha = pai_folha.pai
-    folha.valor[pos_codon] =  val_codon
-    if raiz.prim_calc == True:
-        raiz.cria_L_condicional_vetor()
-        P_conj = raiz.L_arvore[0, pos_codon]
-        print(P_conj)
-    else:
-        raiz.recalc[pos_codon] = True
-        raiz.cria_L_condicional_vetor()
-        P_conj = raiz.L_arvore[0, pos_codon]
-        print(P_conj)
-    P_soma = 0
-    # ja temos todas os nos com exceção do que tem desconhecido calculado
-    # e não precisamos recalcular para diferentes valores de S1
-    #vetor de combinações
-    #combin = np.tile(h,folha.num_codon).reshape(folha.num_codon,n_base), combinatorias extensas
-    for i in range(n_base):
-        folha.valor[pos_codon] = i    #para mais de um codon, complica-se a escolha
-        if i == (n_base - 1):
-            no_recalc.change_recalc = True  
-            no_recalc.cria_L_condicional()
-        else:
-            no_recalc.cria_L_condicional()
-        raiz.L_condicional[:, pos_codon] = np.multiply(raiz.filhos[0].P_trs[:, pos_codon], 
-                                         raiz.filhos[1].P_trs[:, pos_codon])
-        P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional[:, pos_codon])
-    P_cond = P_conj/P_soma
-    return(P_cond)
-
-### teste
-#print(prob_condicional(S0, S1, 0))
-#print(prob_condicional(S0,  S1, 1))
-#print(prob_condicional(S0, S1, 2))
-#print(prob_condicional(S0, S1, 3))
-#print(prob_condicional(S0, S1, 0) + prob_condicional(S0, S1, 1) + 
-# prob_condicional(S0, S1, 2) + prob_condicional(S0, S1, 3))
 
 S0 = Especie(None, np.full(2,None), minha_priori = priori)
 S6 = Especie(S0, np.full(2,None), meu_tempo = 15)
@@ -213,33 +206,13 @@ S3 = Especie(S8, np.array([0,3]), meu_tempo = 5)
 S7 = Especie(S8, np.full(2,None), meu_tempo = 20)
 S4 = Especie(S7, np.array([None,2]), meu_tempo = 10)
 S5 = Especie(S7, np.array([1,3]), meu_tempo = 3)
-print(prob_condicional(S0, S4, 0,0))
-print(prob_condicional(S0, S4, 1,0))
-print(prob_condicional(S0, S4, 2,0))
-print(prob_condicional(S0, S4, 3,0))
-print(prob_condicional(S0, S4, 0,0) + prob_condicional(S0, S4, 1,0) +
-      prob_condicional(S0, S4, 2,0) + prob_condicional(S0, S4, 3,0))
+print(S4.prob_condicional(0,0))
+print(S4.prob_condicional(1,0))
+print(S4.prob_condicional(2,0))
+print(S4.prob_condicional(3,0))
+print(S4.prob_condicional(0,0) + S4.prob_condicional(1,0) +
+      S4.prob_condicional(2,0) + S4.prob_condicional(3,0))
 
-
-
-
-#fazendo para outra arvore definida pelo exemplo
-X7 = Especie(None, np.full(13, None), minha_priori = priori)
-X5 = Especie(X7, np.full(13,None), meu_tempo = 10)
-X6 = Especie(X7, np.full(13, None), meu_tempo = 12)
-X1 = Especie(X5, np.array([1, None, 3, 1, 0, 2, 3, 1 , 2 ,3 ,1 ,2 ,0]), meu_tempo= 0.25)
-X2 = Especie(X5, np.array([0, 1, 3, 0, 2, 1, 2, 3, 0, 2, 3, 1, 2]), meu_tempo = 12)
-X3 = Especie(X6, np.array([0, 3, 2, 0, 1, 2, 3, 1, 0, 1 ,2, 3, 1]), meu_tempo = 2)
-X4 = Especie(X6, np.array([3, 1, 1, 2, 0, 0, 1, 2, 3, 1, 0, 2, 1]), meu_tempo = 3)
-
-### teste com X1 desconhecido
-print(prob_condicional(X7, X1, 0,1))
-print(prob_condicional(X7, X1, 1,1))
-print(prob_condicional(X7, X1, 2,1))
-print(prob_condicional(X7, X1, 3,1))
-print(prob_condicional(X7, X1, 0,0) + prob_condicional(X7, X1, 1,0)+ 
-      prob_condicional(X7, X1, 2,0) +
-prob_condicional(X7, X1, 3,0))
 
 
 
@@ -453,5 +426,5 @@ A = list(np.where(a < 3)[0])
 valor = np.zeros((4, 5))
 for i in range(5):
     valor[(0,i)] = 1
-valor[:,[0]] = np.zeros((4, 1))
+valor[:,[0, 2]] = np.zeros((4, 2))
 
