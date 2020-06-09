@@ -94,6 +94,7 @@ class Especie:
                 self.P_trs[:, A] = np.dot(self.trs, self.L_condicional[:, A])
                 if self.change_recalc == True:
                     self.recalc = np.full(self.num_codon, False)
+                    
     def prob_condicional(self, val_codon, pos_codon):
         valor_original = self.valor[pos_codon]
         pai_folha = self.pai
@@ -131,6 +132,7 @@ class Especie:
                                          raiz.filhos[1].P_trs[:, pos_codon])
             P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional[:, pos_codon])
         P_cond = P_conj/P_soma
+    # voltando para o valor original do começo, antes de se calcular todas as probabilidades
         self.valor[pos_codon] = valor_original
         return(P_cond)
                 
