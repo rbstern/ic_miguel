@@ -9,8 +9,8 @@ import math
 n_base = 4
 u = 1  #taxa de substituição de base por tempo
 # priori para a raiz
-priori = np.matrix(np.full((n_base, 1), 1.0/n_base))
-# priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
+# priori = np.full((n_base, 1), 1/n_base)
+priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
 
 
 class Especie:
@@ -21,6 +21,7 @@ class Especie:
         self.num_codon = self.valor.size
         self.prim_calc = True
         self.recalc = np.full(self.num_codon, False)
+        self.change_recalc = False
         self.mudou_tempo = False
         self.L_condicional = None
         self.P_trs = None
@@ -39,37 +40,60 @@ class Especie:
         return P.transpose()
             
     def cria_L_condicional_vetor(self):
-      self.L_arvore = np.zeros(self.num_codon)
+      self.L_arvore = np.zeros((1, self.num_codon))
       self.cria_L_condicional()
     
     def cria_L_condicional(self):
         if(not(self.filhos)):# self eh uma folha
-            if np.count_nonzero(self.recalc) > 0 or np.all(self.L_condicional) == None:
+            if (self.prim_calc == True):
                 valor = np.zeros((n_base, self.num_codon))
                 for i in range(self.num_codon):
-                    if list(self.recalc)[i] == True or self.prim_calc == True:
-                        valor[(self.valor[i], i)] =  1
+                    valor[(self.valor[i], i)] =  1
                 self.L_condicional = valor
+                self.P_trs = np.dot(self.trs, self.L_condicional)
                 self.prim_calc = False
+            elif np.count_nonzero(self.recalc) > 0 and self.prim_calc == False:
+                A = list(np.where(self.recalc)[0])
+                self.L_condicional[:, A] = np.zeros((n_base, len(A)))
+                self.L_condicional[int(self.valor[A]), A] = 1
+                self.P_trs[:, A] = np.dot(self.trs, self.L_condicional[:, A])
+                if self.change_recalc == True:
+                    self.recalc = np.full(self.num_codon, False)
+                
         elif(not(self.pai)): # self eh a raiz
-            for filho in self.filhos:
-                filho.cria_L_condicional()
-            self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
-            self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
-            self.prim_calc = False
+            if (self.prim_calc == True):
+                for filho in self.filhos:
+                    filho.cria_L_condicional()
+                self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
+                self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
+                self.prim_calc = False
+            elif np.count_nonzero(self.recalc) > 0 and self.prim_calc == False:
+                A = list(np.where(self.recalc)[0])
+                for filho in self.filhos:
+                    filho.cria_L_condicional()
+                self.L_condicional[:, A] = np.multiply(self.filhos[0].P_trs[:, A], 
+                                  self.filhos[1].P_trs[:, A])
+                self.L_arvore[0, A] = np.dot(self.priori.transpose(), self.L_condicional[:, A])
+                self.recalc = np.full(self.num_codon, False)
+                
         else: # self eh no interno
-            for filho in self.filhos:
-                filho.cria_L_condicional()
-                filho.P_trs = np.dot(filho.trs, filho.L_condicional)
-            if (np.all(self.L_condicional) == None and self.prim_calc == True):
+            if (self.prim_calc == True):
+                for filho in self.filhos:
+                    filho.cria_L_condicional()
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
                 self.P_trs = np.dot(self.trs, self.L_condicional)
                 self.prim_calc = False    
             elif np.count_nonzero(self.recalc) > 0 and self.prim_calc == False:
-                A = np.where(self.recalc)[0]
-                self.L_condicional[:, A] = np.multiply(self.filhos[0].P_trs[:, A], 
+                A = list(np.where(self.recalc)[0])
+                for filho in self.filhos:
+                    if self.change_recalc == True:
+                        filho.change_recalc = True
+                    filho.cria_L_condicional()
+                self.L_condicional[:, A] = np.multiply(self.filhos[0].P_trs[:, A],
                                   self.filhos[1].P_trs[:, A])
-                self.P_trs[:, A] = np.dot( self.trs, self.L_condicional[:, A])
+                self.P_trs[:, A] = np.dot(self.trs, self.L_condicional[:, A])
+                if self.change_recalc == True:
+                    self.recalc = np.full(self.num_codon, False)
                 
     def modifica_L_condicional(self): # Ja calculou L_condicional antes
         if self.prim_calc == False and self.mudou_tempo == True:
@@ -94,9 +118,6 @@ class Especie:
                 self.cria_L_condicional_vetor()
             else:
                 self.cria_L_condicional
-            
-            
-    
                 
 
 
@@ -140,26 +161,38 @@ def prob_condicional(raiz, folha, val_codon, pos_codon): #um codon de cada vez
     # definimos fx1,x2,x3,x4 como S0.cria_L_condicional_vetor()
     # criando fx1,x2,x3,x4 para o valor fixado em val_codon
     pai_folha = folha.pai
-    folha.recalc = np.full(folha.num_codon, True)
+    folha.recalc[pos_codon] = True
+    folha.change_recalc = False
     while pai_folha is not raiz:
         no_recalc = pai_folha
+        no_recalc.change_recalc = False
         no_recalc.recalc[pos_codon] = True
         pai_folha = pai_folha.pai
     folha.valor[pos_codon] =  val_codon
-    raiz.cria_L_condicional_vetor()
-    P_conj = raiz.L_arvore
-    P_conj = P_conj[pos_codon, 0]
+    if raiz.prim_calc == True:
+        raiz.cria_L_condicional_vetor()
+        P_conj = raiz.L_arvore[0, pos_codon]
+        print(P_conj)
+    else:
+        raiz.recalc[pos_codon] = True
+        raiz.cria_L_condicional_vetor()
+        P_conj = raiz.L_arvore[0, pos_codon]
+        print(P_conj)
     P_soma = 0
     # ja temos todas os nos com exceção do que tem desconhecido calculado
     # e não precisamos recalcular para diferentes valores de S1
     #vetor de combinações
     #combin = np.tile(h,folha.num_codon).reshape(folha.num_codon,n_base), combinatorias extensas
     for i in range(n_base):
-        folha.valor[pos_codon] = np.array([i])     #para mais de um codon, complica-se a escolha
-        no_recalc.cria_L_condicional_vetor()
-        raiz.L_condicional = np.multiply(raiz.filhos[0].P_trs[:, pos_codon], 
+        folha.valor[pos_codon] = i    #para mais de um codon, complica-se a escolha
+        if i == (n_base - 1):
+            no_recalc.change_recalc = True  
+            no_recalc.cria_L_condicional()
+        else:
+            no_recalc.cria_L_condicional()
+        raiz.L_condicional[:, pos_codon] = np.multiply(raiz.filhos[0].P_trs[:, pos_codon], 
                                          raiz.filhos[1].P_trs[:, pos_codon])
-        P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional)
+        P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional[:, pos_codon])
     P_cond = P_conj/P_soma
     return(P_cond)
 
@@ -415,3 +448,10 @@ g.muda_tempo_arv()
 ### predição só use valores temporarios (val.temp)
 ### resolver problema na predição (slice e recalc na raiz) e testar para caso com 2 e 3 codons
 ### foco em apresentar
+a = np.array([1,2,3,4,5])
+A = list(np.where(a < 3)[0])
+valor = np.zeros((4, 5))
+for i in range(5):
+    valor[(0,i)] = 1
+valor[:,[0]] = np.zeros((4, 1))
+
