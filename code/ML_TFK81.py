@@ -24,7 +24,9 @@ class Especie:
         self.change_recalc = False
         self.mudou_tempo = False
         self.L_condicional = None
+        self.L_condicional_copy = None
         self.P_trs = None
+        self.P_trs_copy = None
         if(meu_pai):
           meu_pai.filhos.append(self)
           self.priori = meu_pai.priori
@@ -52,11 +54,13 @@ class Especie:
                 self.L_condicional = valor
                 self.P_trs = np.dot(self.trs, self.L_condicional)
                 self.prim_calc = False
+                self.L_condicional_copy,self.P_trs_copy = self.L_condicional.copy(),self.P_trs.copy()
             elif np.count_nonzero(self.recalc) > 0 and self.prim_calc == False:
                 A = list(np.where(self.recalc)[0])
-                self.L_condicional[:, A] = np.zeros((n_base, len(A)))
-                self.L_condicional[int(self.valor[A]), A] = 1
-                self.P_trs[:, A] = np.dot(self.trs, self.L_condicional[:, A])
+                self.L_condicional_copy[:, A] = np.zeros((n_base, len(A)))
+                self.L_condicional_copy[int(self.valor[A]), A] = 1
+                self.P_trs_copy[:, A] = np.dot(self.trs, 
+                               self.L_condicional_copy[:, A])
                 if self.change_recalc == True:
                     self.recalc = np.full(self.num_codon, False)
                 
@@ -65,15 +69,19 @@ class Especie:
                 for filho in self.filhos:
                     filho.cria_L_condicional()
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
+                self.L_condicional_copy = self.L_condicional.copy()
                 self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
+                self.L_arvore_copy = self.L_arvore
                 self.prim_calc = False
             elif np.count_nonzero(self.recalc) > 0 and self.prim_calc == False:
                 A = list(np.where(self.recalc)[0])
                 for filho in self.filhos:
                     filho.cria_L_condicional()
-                self.L_condicional[:, A] = np.multiply(self.filhos[0].P_trs[:, A], 
-                                  self.filhos[1].P_trs[:, A])
-                self.L_arvore[0, A] = np.dot(self.priori.transpose(), self.L_condicional[:, A])
+                self.L_condicional_copy[:, A] = np.multiply(self.filhos[0].P_trs_copy[:, A], 
+                                  self.filhos[1].P_trs_copy[:, A])
+                self.L_avore_copy = self.L_arvore.copy()
+                self.L_arvore_copy[0, A] = np.dot(self.priori.transpose(), 
+                                  self.L_condicional_copy[:, A])
                 self.recalc = np.full(self.num_codon, False)
                 
         else: # self eh no interno
@@ -82,16 +90,17 @@ class Especie:
                     filho.cria_L_condicional()
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
                 self.P_trs = np.dot(self.trs, self.L_condicional)
-                self.prim_calc = False    
+                self.prim_calc = False   
+                self.L_condicional_copy,self.P_trs_copy = self.L_condicional.copy(),self.P_trs.copy()
             elif np.count_nonzero(self.recalc) > 0 and self.prim_calc == False:
                 A = list(np.where(self.recalc)[0])
                 for filho in self.filhos:
                     if self.change_recalc == True:
                         filho.change_recalc = True
                     filho.cria_L_condicional()
-                self.L_condicional[:, A] = np.multiply(self.filhos[0].P_trs[:, A],
-                                  self.filhos[1].P_trs[:, A])
-                self.P_trs[:, A] = np.dot(self.trs, self.L_condicional[:, A])
+                self.L_condicional_copy[:, A] = np.multiply(self.filhos[0].P_trs_copy[:, A],
+                                  self.filhos[1].P_trs_copy[:, A])
+                self.P_trs_copy[:, A] = np.dot(self.trs, self.L_condicional_copy[:, A])
                 if self.change_recalc == True:
                     self.recalc = np.full(self.num_codon, False)
                     
@@ -114,7 +123,7 @@ class Especie:
         else:
             raiz.recalc[pos_codon] = True
             raiz.cria_L_condicional_vetor()
-            P_conj = raiz.L_arvore[0, pos_codon]
+            P_conj = raiz.L_arvore_copy[0, pos_codon]
             print(P_conj)
         P_soma = 0
     # ja temos todas os nos com exceção do que tem desconhecido calculado
@@ -128,9 +137,10 @@ class Especie:
                 no_recalc.cria_L_condicional()
             else:
                 no_recalc.cria_L_condicional()
-            raiz.L_condicional[:, pos_codon] = np.multiply(raiz.filhos[0].P_trs[:, pos_codon], 
-                                         raiz.filhos[1].P_trs[:, pos_codon])
-            P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional[:, pos_codon])
+            raiz.L_condicional_copy[:, pos_codon] = np.multiply(
+                    raiz.filhos[0].P_trs_copy[:, pos_codon], 
+                                         raiz.filhos[1].P_trs_copy[:, pos_codon])
+            P_soma += np.dot(raiz.priori.transpose(), raiz.L_condicional_copy[:, pos_codon])
         P_cond = P_conj/P_soma
     # voltando para o valor original do começo, antes de se calcular todas as probabilidades
         self.valor[pos_codon] = valor_original
@@ -159,6 +169,7 @@ class Especie:
                 self.cria_L_condicional_vetor()
             else:
                 self.cria_L_condicional
+        
                 
 
 
@@ -424,6 +435,8 @@ g.muda_tempo_arv()
 ### resolver problema na predição (slice e recalc na raiz) e testar para caso com 2 e 3 codons
 ### foco em apresentar
 a = np.array([1,2,3,4,5])
+z = a.copy()
+z[0] = 12
 A = list(np.where(a < 3)[0])
 valor = np.zeros((4, 5))
 for i in range(5):
