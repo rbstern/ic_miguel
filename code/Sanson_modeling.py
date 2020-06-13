@@ -3,7 +3,6 @@ import numpy as np
 from Bio import Phylo
 import ML_TFK81 as fels
 
-n_pos = 2236
 # reading files from sanson
 sanson_tree = Phylo.read('Sanson.tre', 'nexus')
 print(sanson_tree)
@@ -13,7 +12,6 @@ count_T = 0
 count_C = 0
 count_A = 0
 count_G = 0
-count_empty = 0
 from Bio import SeqIO
 seq_list = []
 id_list = []
@@ -25,6 +23,7 @@ for seq_record in SeqIO.parse("SansonLeaves.nex", "nexus"):
     count_T  += seq_record.seq.count("T")
     count_C  += seq_record.seq.count("C")
     count_A  += seq_record.seq.count("A")
+    count_G  += seq_record.seq.count("G")
 
 priori_T = count_T/(count_T + count_C + count_A + count_G)
 priori_C = count_C/(count_T + count_C + count_A + count_G)
@@ -32,10 +31,13 @@ priori_A = count_A/(count_T + count_C + count_A + count_G)
 priori_G = count_G/(count_T + count_C + count_A + count_G)
 
 priori = np.array([[priori_T, priori_C, priori_A, priori_G]]).transpose()
+for i in range(len(seq_list)):
+    print(len(seq_list[i]))
 # making lists of arrays encoding the step above
 # encoding 
 array_dict = {}
 np.random.seed(0)
+del_list = []
 for i in range(len(seq_list)):
     array = np.zeros(len(seq_list[0]))
     for j in range(len(seq_list[0])):
@@ -48,18 +50,15 @@ for i in range(len(seq_list)):
         elif seq_list[i][j] == 'G':
             array[j] = 3
         else:
-            u = np.random.uniform(0,1)
-            cumulative = np.cumsum(priori)
-            if 0 < u <=  cumulative[0]:
-                array[j] = 0
-            elif cumulative[0] < u <= cumulative[1]:
-                array[j] = 1
-            elif cumulative[1] < u <= cumulative[2]:
-                array[j] = 2
-            elif cumulative[2] < u <= cumulative[3]:
-                array[j] = 3
+            del_list.append(j)
+            
     array_dict[id_list[i]] = array
-
+    
+# deleting the missing values in all arrays
+for key in array_dict:
+    array_dict[key] = np.delete(array_dict[key], del_list)
+n_pos = array_dict[id_list[0]].size  
+   
 
 np.random.uniform(0, 1, 3)
 # drawing the tree
@@ -76,7 +75,7 @@ def iter_tree(tree, specie_bio, parents_fels):
         return S0
     
     elif specie_bio.name == None:
-        unif = np.random.uniform(0,16)
+        unif = np.random.uniform(3,8)
         S = fels.Especie(parents_fels, np.full(n_pos, None), meu_tempo = unif)
         specie_bio1 = specie_bio.clades[0]
         specie_bio2 = specie_bio.clades[1]
@@ -84,12 +83,31 @@ def iter_tree(tree, specie_bio, parents_fels):
         iter_tree(tree, specie_bio1, S)
         
     elif specie_bio.name != None:
-        unif = np.random.uniform(0,8)
+        unif = np.random.uniform(0,4)
         fels.Especie(parents_fels, array_dict[specie_bio.name], meu_tempo = unif)
 
 # testing now
 S0 = iter_tree(sanson_tree, None, None)
 
+# Now that we have our felsenstein tree estabilished, lets compute the likelihood and 
+# the optimum lengths more further
+filho = S0.filhos[0].filhos[0].filhos[0].filhos[0].valor
+# creating 
+S0.cria_L_condicional_vetor()
+print(S0.L_arvore)
+print(np.prod(S0.L_arvore))
+print(-np.sum(np.log(S0.L_arvore)))
+veros_1 = S0.L_arvore
 
-
+# making non rooted tree
+g = fels.Grafo()
+g.transforma_grafo(S0)
+g.L_condicional_g_vetor(S0.filhos[0],S0.filhos[1])
+g.no(S0.filhos[0]).L_condicional
+g.maxim_L_vetor2((10**(-3)))
+g.muda_tempo_arv()
+S0.modifica_L_condicional()
+print(np.prod(S0.L_arvore))
+print(-np.sum(np.log(S0.L_arvore)))
+vero_2 = S0.L_arvore
         

@@ -3,9 +3,11 @@ import math
 
 
 
-
+np.random.seed(0)
 n_base = 4
-u = 1  #taxa de substituição de base por tempo
+# u = 1  
+u = np.random.uniform(0.24e-04, 0.42e-04)
+#taxa de substituição de base por tempo
 # priori para a raiz
 # priori = np.full((n_base, 1), 1/n_base)
 # priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
@@ -46,7 +48,7 @@ class Especie:
             if (self.prim_calc == True):
                 valor = np.zeros((n_base, self.num_codon))
                 for i in range(self.num_codon):
-                    valor[(self.valor[i], i)] =  1
+                    valor[int(self.valor[i]), i] =  1
                 self.L_condicional = valor
                 self.P_trs = np.dot(self.trs, self.L_condicional)
                 self.prim_calc = False
@@ -337,6 +339,30 @@ class Grafo:
           it += 1
           if np.max(erros) <= e:
               return([erros, it])
+    def maxim_L_vetor2(self, e):
+        erros = np.zeros(self.get_num_aresta())
+        lista_nos = self.nos_grafo()
+        lista_repetidos = []
+        contador = 0
+        for no in lista_nos:
+            viz = self.no(no).indices_vizinhos()
+            tam = len(viz)
+            if lista_repetidos == []:
+                for i in range(tam):
+                    erros[contador] = self.maxim_L(no, viz[i])
+                    while erros[contador] > e:
+                        erros[contador] = self.maxim_L(no, viz[i])
+                    contador += 1
+            else:
+                for i in range(tam):
+                    if viz[i] not in lista_repetidos:
+                        erros[contador] = self.maxim_L(no, viz[i])
+                        while erros[contador] > e:
+                            erros[contador] = self.maxim_L(no, viz[i])
+                        contador += 1
+            lista_repetidos.append(no)
+            
+                            
       
     def maxim_L(self,especie_1,especie_aresta):
       v = self.no(especie_1).retorna_peso(especie_aresta)
@@ -348,9 +374,10 @@ class Grafo:
                              self.no(especie_aresta).L_condicional))
       B = np.multiply(np.dot(self.no(especie_1).priori.transpose(), self.no(especie_1).L_condicional),
       np.dot(self.no(especie_aresta).priori.transpose(), self.no(especie_aresta).L_condicional))
-      v_atual = -(np.log(1 - ((1/K)*(np.sum((p*B)/((A*q) + (B*p)))))))
+      p_atual = (1/K)*(np.sum((p*B)/((A*q) + (B*p))))
+      v_atual = -np.log(1 - p_atual)
       self.muda_peso(especie_1,especie_aresta,v_atual)
-      erro = abs(v_atual - v)
+      erro = abs(p_atual - p)
       return(erro)
       
     
