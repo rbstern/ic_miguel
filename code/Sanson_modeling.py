@@ -20,19 +20,7 @@ for seq_record in SeqIO.parse("SansonLeaves.nex", "nexus"):
     print(repr(seq_record.seq))
     id_list.append(seq_record.id)
     seq_list.append(str(seq_record.seq))
-    count_T  += seq_record.seq.count("T")
-    count_C  += seq_record.seq.count("C")
-    count_A  += seq_record.seq.count("A")
-    count_G  += seq_record.seq.count("G")
 
-priori_T = count_T/(count_T + count_C + count_A + count_G)
-priori_C = count_C/(count_T + count_C + count_A + count_G)
-priori_A = count_A/(count_T + count_C + count_A + count_G)
-priori_G = count_G/(count_T + count_C + count_A + count_G)
-
-priori = np.array([[priori_T, priori_C, priori_A, priori_G]]).transpose()
-for i in range(len(seq_list)):
-    print(len(seq_list[i]))
 # making lists of arrays encoding the step above
 # encoding 
 array_dict = {}
@@ -57,8 +45,17 @@ for i in range(len(seq_list)):
 # deleting the missing values in all arrays
 for key in array_dict:
     array_dict[key] = np.delete(array_dict[key], del_list)
+    count_T += (array_dict[key] == 0).sum()
+    count_C += (array_dict[key] == 1).sum()
+    count_A += (array_dict[key] == 2).sum()
+    count_G += (array_dict[key] == 3).sum() 
 n_pos = array_dict[id_list[0]].size  
-   
+priori_T = count_T/(count_T + count_C + count_A + count_G)
+priori_C = count_C/(count_T + count_C + count_A + count_G)
+priori_A = count_A/(count_T + count_C + count_A + count_G)
+priori_G = count_G/(count_T + count_C + count_A + count_G)
+
+priori = np.array([[priori_T, priori_C, priori_A, priori_G]]).transpose()  
 
 np.random.uniform(0, 1, 3)
 # drawing the tree
@@ -96,7 +93,7 @@ filho = S0.filhos[0].filhos[0].filhos[0].filhos[0].valor
 S0.cria_L_condicional_vetor()
 print(S0.L_arvore)
 print(np.prod(S0.L_arvore))
-print(-np.sum(np.log(S0.L_arvore)))
+print(np.sum(np.log(S0.L_arvore)))
 veros_1 = S0.L_arvore
 
 # making non rooted tree
@@ -108,6 +105,6 @@ g.maxim_L_vetor2((10**(-3)))
 g.muda_tempo_arv()
 S0.modifica_L_condicional()
 print(np.prod(S0.L_arvore))
-print(-np.sum(np.log(S0.L_arvore)))
+print(np.sum(np.log(S0.L_arvore)))
 vero_2 = S0.L_arvore
         
