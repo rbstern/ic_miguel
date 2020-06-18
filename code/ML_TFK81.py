@@ -9,7 +9,7 @@ n_base = 4
 u = np.random.uniform(0.24e-04, 0.42e-04)
 #taxa de substituição de base por tempo
 # priori para a raiz
-priori = np.full((n_base, 1), 1/n_base)
+# priori = np.full((n_base, 1), 1/n_base)
 # priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
 
 
@@ -151,13 +151,12 @@ class Especie:
                     filho.modifica_L_condicional()
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
                 self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
-                print(self.L_arvore)
             else:
                 for filho in self.filhos:
                     if (not(filho.filhos)):
                         filho.P_trs = np.dot(filho.trs, filho.L_condicional)
                     else:
-                        filho.modifica_L_condicional
+                        filho.modifica_L_condicional()
                         filho.P_trs = np.dot(filho.trs, filho.L_condicional)
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
                 self.P_trs = np.dot(self.trs, self.L_condicional)
@@ -166,36 +165,38 @@ class Especie:
                 self.L_arvore = np.zeros(self.num_codon)
                 self.cria_L_condicional_vetor()
             else:
-                self.cria_L_condicional
-        
+                self.cria_L_condicional()
+                
                 
 
 
-S0 = Especie(None, np.full(8,None), minha_priori = priori)
-S6 = Especie(S0, np.full(8,None), meu_tempo = 10)
-S1 = Especie(S6, np.array([1, 2, 0, 3, 1, 0, 2, 0]), meu_tempo = 2)
-S2 = Especie(S6, np.array([0, 3, 1, 1, 2, 1, 0, 0]), meu_tempo = 4)
-S8 = Especie(S0, np.full(8,None), meu_tempo = 15)
-S3 = Especie(S8, np.array([0, 1, 1, 2, 2, 3, 3, 0]), meu_tempo = 8)
-S7 = Especie(S8, np.full(8,None), meu_tempo = 14)
-S4 = Especie(S7, np.array([1, 2, 3, 0, 1, 1, 0, 2]), meu_tempo = 4)
-S5 = Especie(S7, np.array([2, 3, 0, 1, 0, 2, 2, 1]), meu_tempo = 5)
-S0.cria_L_condicional_vetor()
-print(np.sum(np.log(S0.L_arvore)))
-print(S1.L_condicional)
-print(S1.P_trs)
-print(S2.P_trs)
-print(S0.P_trs)
-print(S6.L_condicional)
-print(S6.P_trs)
-print(S0.L_condicional)
-print(S0.L_arvore)
-print(S8.L_condicional)
-
-# Após modificação
-S0.modifica_L_condicional()
-print(np.sum(np.log(S0.L_arvore)))
-
+# =============================================================================
+# S0 = Especie(None, np.full(8,None), minha_priori = priori)
+# S6 = Especie(S0, np.full(8,None), meu_tempo = 10)
+# S1 = Especie(S6, np.array([1, 2, 0, 3, 1, 0, 2, 0]), meu_tempo = 2)
+# S2 = Especie(S6, np.array([0, 3, 1, 1, 2, 1, 0, 0]), meu_tempo = 4)
+# S8 = Especie(S0, np.full(8,None), meu_tempo = 15)
+# S3 = Especie(S8, np.array([0, 1, 1, 2, 2, 3, 3, 0]), meu_tempo = 8)
+# S7 = Especie(S8, np.full(8,None), meu_tempo = 14)
+# S4 = Especie(S7, np.array([1, 2, 3, 0, 1, 1, 0, 2]), meu_tempo = 4)
+# S5 = Especie(S7, np.array([2, 3, 0, 1, 0, 2, 2, 1]), meu_tempo = 5)
+# S0.cria_L_condicional_vetor()
+# print(np.sum(np.log(S0.L_arvore)))
+# print(S1.L_condicional)
+# print(S1.P_trs)
+# print(S2.P_trs)
+# print(S0.P_trs)
+# print(S6.L_condicional)
+# print(S6.P_trs)
+# print(S0.L_condicional)
+# print(S0.L_arvore)
+# print(S8.L_condicional)
+# 
+# # Após modificação
+# S0.modifica_L_condicional()
+# print(np.sum(np.log(S0.L_arvore)))
+# 
+# =============================================================================
  #testando o caso condicional com S1 = 'None' para apenas um codon
 #S0 = Especie(S0, np.full(1,None), minha_priori = priori)
 #S6 = Especie(S0, np.full(1,None), meu_tempo = 6)
@@ -315,7 +316,7 @@ class Grafo:
       self.no(indice_2).dici_vizinhos[indice_1] = peso_novo
       
     
-    def maxim_L_vetor(self,e, it = 0):
+    def maxim_L_vetor1(self,e, it = 0):
       erros = np.zeros(self.get_num_aresta())
       lista_nos = self.nos_grafo()
       lista_repetidos = []
@@ -340,6 +341,7 @@ class Grafo:
           it += 1
           if np.max(erros) <= e:
               return([erros, it])
+              
     def maxim_L_vetor2(self, e):
         erros = np.zeros(self.get_num_aresta())
         lista_nos = self.nos_grafo()
@@ -363,8 +365,9 @@ class Grafo:
                         contador += 1
             lista_repetidos.append(no)
             
-                            
-      
+    def maxim_L_vetor(self, e):                       
+      self.maxim_L_vetor1(e)
+
     def maxim_L(self,especie_1,especie_aresta):
       v = self.no(especie_1).retorna_peso(especie_aresta)
       q = math.exp(-v)
@@ -444,10 +447,12 @@ class Grafo:
             
 
 
-g = Grafo()
-g.transforma_grafo(S0)
-g.maxim_L_vetor2((10**(-4)))
-g.muda_tempo_arv()
+# =============================================================================
+# g = Grafo()
+# g.transforma_grafo(S0)
+# g.maxim_L_vetor((10**(-3)))
+# g.muda_tempo_arv()
+# =============================================================================
 # g.no(S5).retorna_peso(S7)
 
 ### posteriormente criar classe do tipo "arvore"

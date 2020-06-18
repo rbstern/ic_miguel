@@ -77,7 +77,7 @@ def iter_tree(tree, specie_bio, parents_fels):
         specie_bio1 = specie_bio.clades[0]
         specie_bio2 = specie_bio.clades[1]
         iter_tree(tree, specie_bio1, S)
-        iter_tree(tree, specie_bio1, S)
+        iter_tree(tree, specie_bio2, S)
         
     elif specie_bio.name != None:
         unif = np.random.uniform(0,4)
@@ -101,10 +101,10 @@ g = fels.Grafo()
 g.transforma_grafo(S0)
 g.L_condicional_g_vetor(S0.filhos[0],S0.filhos[1])
 g.no(S0.filhos[0]).L_condicional
-g.maxim_L_vetor2((10**(-3)))
+g.maxim_L_vetor2((10**(-5)))
 g.muda_tempo_arv()
 S0.modifica_L_condicional()
 print(np.prod(S0.L_arvore))
 print(np.sum(np.log(S0.L_arvore)))
-vero_2 = S0.L_arvore
+veros_2 = S0.L_arvore
         
