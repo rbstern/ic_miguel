@@ -9,10 +9,12 @@ n_base = 4
 u = np.random.uniform(0.24e-04, 0.42e-04)
 #taxa de substituição de base por tempo
 # priori para a raiz
-# priori = np.full((n_base, 1), 1/n_base)
+priori = np.full((n_base, 1), 1/n_base)
 # priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
 
 
+
+# Classe Especie (Árvore binaria)
 class Especie:
     def __init__(self, meu_pai, meu_valor, minha_priori = None, meu_tempo = 0):
         self.filhos = []
@@ -166,71 +168,8 @@ class Especie:
                 self.cria_L_condicional_vetor()
             else:
                 self.cria_L_condicional()
-                
-                
-
-
-# =============================================================================
-# S0 = Especie(None, np.full(8,None), minha_priori = priori)
-# S6 = Especie(S0, np.full(8,None), meu_tempo = 10)
-# S1 = Especie(S6, np.array([1, 2, 0, 3, 1, 0, 2, 0]), meu_tempo = 2)
-# S2 = Especie(S6, np.array([0, 3, 1, 1, 2, 1, 0, 0]), meu_tempo = 4)
-# S8 = Especie(S0, np.full(8,None), meu_tempo = 15)
-# S3 = Especie(S8, np.array([0, 1, 1, 2, 2, 3, 3, 0]), meu_tempo = 8)
-# S7 = Especie(S8, np.full(8,None), meu_tempo = 14)
-# S4 = Especie(S7, np.array([1, 2, 3, 0, 1, 1, 0, 2]), meu_tempo = 4)
-# S5 = Especie(S7, np.array([2, 3, 0, 1, 0, 2, 2, 1]), meu_tempo = 5)
-# S0.cria_L_condicional_vetor()
-# print(np.sum(np.log(S0.L_arvore)))
-# print(S1.L_condicional)
-# print(S1.P_trs)
-# print(S2.P_trs)
-# print(S0.P_trs)
-# print(S6.L_condicional)
-# print(S6.P_trs)
-# print(S0.L_condicional)
-# print(S0.L_arvore)
-# print(S8.L_condicional)
-# 
-# # Após modificação
-# S0.modifica_L_condicional()
-# print(np.sum(np.log(S0.L_arvore)))
-# 
-# =============================================================================
- #testando o caso condicional com S1 = 'None' para apenas um codon
-#S0 = Especie(S0, np.full(1,None), minha_priori = priori)
-#S6 = Especie(S0, np.full(1,None), meu_tempo = 6)
-#S1 = Especie(S6, np.array([None]), meu_tempo = 1)
-#S2 = Especie(S6, np.array([0]), meu_tempo = 0.7 )
-#S8 = Especie(S0, np.full(1,None), meu_tempo = 0.4)
-#S3 = Especie(S8, np.array([0]), meu_tempo = 0.6)
-#S7 = Especie(S8, np.full(1,None), meu_tempo = 0.9)
-#S4 = Especie(S7, np.array([0]), meu_tempo = 0.4)
-#S5 = Especie(S7, np.array([3]), meu_tempo = 0.3)
-
-
-
-# =============================================================================
-# S0 = Especie(None, np.full(2,None), minha_priori = priori)
-# S6 = Especie(S0, np.full(2,None), meu_tempo = 15)
-# S1 = Especie(S6, np.array([1,2]), meu_tempo = 12)
-# S2 = Especie(S6, np.array([0,2]), meu_tempo = 10)
-# S8 = Especie(S0, np.full(2,None), meu_tempo = 10)
-# S3 = Especie(S8, np.array([0,3]), meu_tempo = 5)
-# S7 = Especie(S8, np.full(2,None), meu_tempo = 20)
-# S4 = Especie(S7, np.array([None,2]), meu_tempo = 10)
-# S5 = Especie(S7, np.array([1,3]), meu_tempo = 3)
-# print(S4.prob_condicional(0,0))
-# print(S4.prob_condicional(1,0))
-# print(S4.prob_condicional(2,0))
-# print(S4.prob_condicional(3,0))
-# print(S4.prob_condicional(0,0) + S4.prob_condicional(1,0) +
-#       S4.prob_condicional(2,0) + S4.prob_condicional(3,0))
-# =============================================================================
-
-
-
-
+    
+# Inicio da classe grafo (árvore sem nó)
 class No:
     def __init__(self, indice, vizinhos = None, atributos = None, priori = None):
         self.indice = indice
@@ -447,27 +386,62 @@ class Grafo:
             
 
 
-# =============================================================================
-# g = Grafo()
-# g.transforma_grafo(S0)
-# g.maxim_L_vetor((10**(-3)))
-# g.muda_tempo_arv()
-# =============================================================================
-# g.no(S5).retorna_peso(S7)
+
+
+S0 = Especie(None, np.full(8,None), minha_priori = priori)
+S6 = Especie(S0, np.full(8,None), meu_tempo = 10)
+S1 = Especie(S6, np.array([1, 2, 0, 3, 1, 0, 2, 0]), meu_tempo = 2)
+S2 = Especie(S6, np.array([0, 3, 1, 1, 2, 1, 0, 0]), meu_tempo = 4)
+S8 = Especie(S0, np.full(8,None), meu_tempo = 15)
+S3 = Especie(S8, np.array([0, 1, 1, 2, 2, 3, 3, 0]), meu_tempo = 8)
+S7 = Especie(S8, np.full(8,None), meu_tempo = 14)
+S4 = Especie(S7, np.array([1, 2, 3, 0, 1, 1, 0, 2]), meu_tempo = 4)
+S5 = Especie(S7, np.array([2, 3, 0, 1, 0, 2, 2, 1]), meu_tempo = 5)
+S0.cria_L_condicional_vetor()
+print(np.sum(np.log(S0.L_arvore)))
+print(S1.L_condicional)
+print(S1.P_trs)
+print(S2.P_trs)
+print(S0.P_trs)
+print(S6.L_condicional)
+print(S6.P_trs)
+print(S0.L_condicional)
+print(S0.L_arvore)
+print(S8.L_condicional)
+
+# Realizando otimização
+g = Grafo()
+g.transforma_grafo(S0)
+g.maxim_L_vetor((10**(-3)))
+g.muda_tempo_arv()
+S0.modifica_L_condicional()
+print(np.sum(np.log(S0.L_arvore)))
+
+
+
+
+S0 = Especie(None, np.full(2,None), minha_priori = priori)
+S6 = Especie(S0, np.full(2,None), meu_tempo = 15)
+S1 = Especie(S6, np.array([1,2]), meu_tempo = 12)
+S2 = Especie(S6, np.array([0,2]), meu_tempo = 10)
+S8 = Especie(S0, np.full(2,None), meu_tempo = 10)
+S3 = Especie(S8, np.array([0,3]), meu_tempo = 5)
+S7 = Especie(S8, np.full(2,None), meu_tempo = 20)
+S4 = Especie(S7, np.array([None,2]), meu_tempo = 10)
+S5 = Especie(S7, np.array([1,3]), meu_tempo = 3)
+print(S4.prob_condicional(0,0))
+print(S4.prob_condicional(1,0))
+print(S4.prob_condicional(2,0))
+print(S4.prob_condicional(3,0))
+print(S4.prob_condicional(0,0) + S4.prob_condicional(1,0) +
+      S4.prob_condicional(2,0) + S4.prob_condicional(3,0))
+
+
+
 
 ### posteriormente criar classe do tipo "arvore"
 ### predição só use valores temporarios (val.temp)
 ### resolver problema na predição (slice e recalc na raiz) e testar para caso com 2 e 3 codons
 ### foco em apresentar
-# =============================================================================
-# a = np.array([1,2,3,4,5])
-# z = a.copy()
-# z[0] = 12
-# A = list(np.where(a < 3)[0])
-# valor = np.zeros((4, 5))
-# for i in range(5):
-#     valor[(0,i)] = 1
-# valor[:,[0, 2]] = np.zeros((4, 2))
-# =============================================================================
 
 
