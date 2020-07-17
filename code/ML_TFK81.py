@@ -153,13 +153,16 @@ class Especie:
                 self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
                 self.L_arvore = np.dot(self.priori.transpose(), self.L_condicional)
             else:
-                for filho in self.filhos:
-                    if (not(filho.filhos)):
-                        filho.P_trs = np.dot(filho.trs, filho.L_condicional)
-                    else:
-                        filho.modifica_L_condicional()
-                self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
-                self.P_trs = np.dot(self.trs, self.L_condicional)
+                if self.filhos:
+                    for filho in self.filhos:
+                        if (not(filho.filhos)):
+                            filho.P_trs = np.dot(filho.trs, filho.L_condicional)
+                        else:
+                            filho.modifica_L_condicional()
+                    self.L_condicional = np.multiply(self.filhos[0].P_trs, self.filhos[1].P_trs)
+                    self.P_trs = np.dot(self.trs, self.L_condicional)
+                else:
+                    self.P_trs = np.dot(self.trs, self.L_condicional)
         else:
             if(not(self.pai)):
                 self.L_arvore = np.zeros(self.num_codon)
