@@ -389,6 +389,14 @@ class Grafo:
                 i += 1
             
 
+def otimin_arv(raiz):
+    g = Grafo()
+    g.transforma_grafo(raiz)
+    g.maxim_L_vetor((10**(-4)))
+    g.muda_tempo_arv()
+    raiz.modifica_L_condicional()
+    veros = np.sum(np.log(raiz.L_arvore))
+    return veros
 
 
 # =============================================================================
