@@ -3,11 +3,36 @@ import ML_TFK81 as fels
 import matplotlib.pyplot as plt
 import scipy.stats as scp
 from itertools import combinations 
-
 # 0 para T
 # 1 para C
 # 2 para A
 # 3 para G
+
+# graficos
+x = np.linspace(scp.expon.ppf(0.01, scale = 1),
+                scp.expon.ppf(0.99, scale = 1), 100)
+plt.plot(x, scp.expon.pdf(x, scale = 1),
+         'r-', lw = 5, alpha = 0.6, label = 'expond_pdf')
+plt.xlabel('x')
+plt.ylabel('density')
+plt.title('exponential(1) density')
+plt.show()
+
+x = np.linspace(scp.expon.ppf(0.01, scale = 2),
+                scp.expon.ppf(0.99, scale = 2), 100)
+plt.plot(x, scp.expon.pdf(x, scale = 2),
+         'r-', lw = 5, alpha = 0.6, label = 'expond_pdf')
+plt.xlabel('x')
+plt.ylabel('density')
+plt.title('exponential(1/2) density')
+plt.show()
+
+np.random.seed(0)
+n_base = 4
+priori = np.full((n_base, 1), 1/n_base)
+taxa = 1  
+
+# all functions 
 
 def list_comb(folhas_atuais):
     comb = list(combinations(np.arange(len(folhas_atuais)), 2))
@@ -15,9 +40,6 @@ def list_comb(folhas_atuais):
     for i in range(len(comb)):
         new_comb.append(list(comb[i]))
     return new_comb
-
-tops = []
-folhas = list(np.arange(4))
 
 def gera_topologias(folhas_atuais):
     if len(folhas_atuais) == 1:
@@ -38,9 +60,6 @@ def gera_topologias(folhas_atuais):
             string = "(" + str(folhas_atuais[pares[0]]) + "," + str(folhas_atuais[pares[1]]) + ")"
             folhas_atuais_n.append(string)
             gera_topologias(folhas_atuais_n)
-
-gera_topologias(folhas)
-tuple1 = eval(tops[0][0])
 
 def modif_type(tops):
     for i in range(len(tops)):
@@ -68,26 +87,34 @@ def read_top(top, especie_pai = None):
         valor = dici_base[list(dici_base)[top]]
         S = fels.Especie(especie_pai, meu_valor = valor, 
                          meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-        
-            
+                 
 def read_all_tops(tops):
-    tops = modif_type(tops)
+    if isinstance(tops[0][0], str):
+        tops = modif_type(tops)
     fels_roots = []
     for i in range(len(tops)):
         top = tops[i][0]
-        S = read_top(top, especie_pai)
+        S = read_top(top)
         fels_roots.append(S)
     return fels_roots
 
-         
-gera_topologias(folhas)
-print(eval(tops[0][0]))
+def permute(top):
+    new_top = (top[1], top[0])
+    return new_top
+    
+def top_pop(tops):
+    i = 0
+    while i < len(tops):
+        if (isinstance(tops[i][0][0], tuple)) and (isinstance(tops[i][0][1], tuple)):
+            permutation = [permute(tops[i][0])]
+            if permutation in tops:
+                tops.remove(permutation)
+        i += 1  
+    return tops
+                
+    
 
-
-np.random.seed(0)
-n_base = 4
-priori = np.full((n_base, 1), 1/n_base)
-taxa = 5                             
+                          
                     
 def value_gen(n_site):
     valor =  np.zeros(n_site)
@@ -102,14 +129,6 @@ def value_gen(n_site):
             valor[i] = 3
     return valor            
 
-x = np.linspace(scp.expon.ppf(0.01, scale = 1),
-                scp.expon.ppf(0.99, scale = 1), 100)
-plt.plot(x, scp.expon.pdf(x, scale = 1),
-         'r-', lw = 5, alpha = 0.6, label = 'expond_pdf')
-plt.xlabel('x')
-plt.ylabel('density')
-plt.title('exponential(1) density')
-plt.show()
         
 
 class Especie_sim:
@@ -164,7 +183,7 @@ class Especie_sim:
             dici_filhos[self] = self.valor
 
 # gerando as bases e topologia original a ser predita
-n_site = 2500
+n_site = 1500
 val_inicial = value_gen(n_site)
 S0 = Especie_sim(meu_pai = None, minha_priori = priori, valor = val_inicial, taxa_subst = taxa)
 S6 = Especie_sim(meu_pai = S0, minha_priori = priori, valor = None, taxa_subst = taxa)
@@ -192,192 +211,28 @@ print(num_2/(2500*4))
 print(num_3/(2500*4))
 
 
-
-x = np.linspace(scp.expon.ppf(0.01, scale = 2),
-                scp.expon.ppf(0.99, scale = 2), 100)
-plt.plot(x, scp.expon.pdf(x, scale = 2),
-         'r-', lw = 5, alpha = 0.6, label = 'expond_pdf')
-plt.xlabel('x')
-plt.ylabel('density')
-plt.title('exponential(1/2) density')
-plt.show()
-
-# criando varias topologias na mao
+# criando e avaliando varias topologias
 def display_veros(lista_raiz):
     for i in range(len(lista_raiz)):
+        # before optimization
+        lista_raiz[i].cria_L_condicional_vetor()
+        old_veros = np.sum(np.log(lista_raiz[i].L_arvore))
         veros = fels.otimin_arv(lista_raiz[i])
-        print("Topology{}:".format(i + 1), veros)
-
-lista_raiz = []
-
-# topologia 1 
-S0_top1 = fels.Especie(None, np.full(n_site, None), priori)
-S6_top1 = fels.Especie(S0_top1, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S8_top1 = fels.Especie(S0_top1, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S1_top1 = fels.Especie(S6_top1, dici_base[S1], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S2_top1 = fels.Especie(S6_top1, dici_base[S2],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S3_top1 = fels.Especie(S8_top1, dici_base[S3],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S4_top1 = fels.Especie(S8_top1, dici_base[S4],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-
-# calculando verossimilhança
-S0_top1.cria_L_condicional_vetor()
-print(np.sum(np.log(S0_top1.L_arvore)))
-lista_raiz.append(S0_top1)
-
-
-# topologia 2
-S0_top2 = fels.Especie(None, np.full(n_site, None), priori)
-S2_top2 = fels.Especie(S0_top2, dici_base[S2], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S8_top2 = fels.Especie(S0_top2, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S1_top2 = fels.Especie(S8_top2, dici_base[S1], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S7_top2 = fels.Especie(S8_top2, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S3_top2 = fels.Especie(S7_top2, dici_base[S3],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S4_top2 = fels.Especie(S7_top2, dici_base[S4],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-
-# calculando verossimilhança
-S0_top2.cria_L_condicional_vetor()
-print(np.sum(np.log(S0_top2.L_arvore)))
-lista_raiz.append(S0_top2)
-
-
-
-# topologia 3
-S0_top3 = fels.Especie(None, np.full(n_site, None), priori, taxa_subst = taxa)
-S1_top3 = fels.Especie(S0_top3, dici_base[S1], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S8_top3 = fels.Especie(S0_top3, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S2_top3 = fels.Especie(S8_top3, dici_base[S2], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S7_top3 = fels.Especie(S8_top3, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S3_top3 = fels.Especie(S7_top3, dici_base[S3],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S4_top3 = fels.Especie(S7_top3, dici_base[S4],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-
-# calculando verossimilhança
-S0_top3.cria_L_condicional_vetor()
-print(np.sum(np.log(S0_top3.L_arvore)))
-lista_raiz.append(S0_top3)
-
-
-# topologia 4
-S0_top4 = fels.Especie(None, np.full(n_site, None), priori, taxa_subst = taxa)
-S4_top4 = fels.Especie(S0_top4, dici_base[S4], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S8_top4 = fels.Especie(S0_top4, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S3_top4 = fels.Especie(S8_top4, dici_base[S3], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S7_top4 = fels.Especie(S8_top4, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S1_top4 = fels.Especie(S7_top4, dici_base[S1],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S2_top4 = fels.Especie(S7_top4, dici_base[S2],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-
-# calculando verossimilhança
-S0_top4.cria_L_condicional_vetor()
-print(np.sum(np.log(S0_top4.L_arvore)))
-lista_raiz.append(S0_top4)
-
-
-# topologia 5
-S0_top5 = fels.Especie(None, np.full(n_site, None), priori)
-S3_top5 = fels.Especie(S0_top5, dici_base[S3], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S8_top5 = fels.Especie(S0_top5, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S4_top5 = fels.Especie(S8_top5, dici_base[S4], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S7_top5 = fels.Especie(S8_top5, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S1_top5 = fels.Especie(S7_top5, dici_base[S1],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S2_top5 = fels.Especie(S7_top5, dici_base[S2],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-
-# calculando verossimilhança
-S0_top5.cria_L_condicional_vetor()
-print(np.sum(np.log(S0_top5.L_arvore)))
-lista_raiz.append(S0_top5)
-
-# topologia 6
-S0_top6 = fels.Especie(None, np.full(n_site, None), priori)
-S3_top6 = fels.Especie(S0_top6, dici_base[S3], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S8_top6 = fels.Especie(S0_top6, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S2_top6 = fels.Especie(S8_top6, dici_base[S2], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S7_top6 = fels.Especie(S8_top6, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S1_top6 = fels.Especie(S7_top6, dici_base[S1],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S4_top6 = fels.Especie(S7_top6, dici_base[S4],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-
-# topologia 7
-S0_top7 = fels.Especie(None, np.full(n_site, None), priori)
-S3_top7 = fels.Especie(S0_top7, dici_base[S3], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S8_top7 = fels.Especie(S0_top7, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S1_top7 = fels.Especie(S8_top7, dici_base[S1], 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S7_top7 = fels.Especie(S8_top7, np.full(n_site, None), 
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S2_top7 = fels.Especie(S7_top7, dici_base[S2],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-S4_top7 = fels.Especie(S7_top7, dici_base[S4],
-                       meu_tempo = np.random.exponential(scale = 2), taxa_subst = taxa)
-
-# calculando verossimilhança
-S0_top7.cria_L_condicional_vetor()
-print(np.sum(np.log(S0_top7.L_arvore)))
-lista_raiz.append(S0_top7)
-
-# criando uma função que gera topologias
-def gera_top(n_filhos):
-    
-
-
-
-
-display_veros(lista_raiz)
-
-
-
-
-
-
-
-
+        print("Topology{}: old likelihood:".format(i + 1), old_veros, ", new likelihood:", veros)
         
+        
+tops = []
+folhas = list(np.arange(4))
+
+gera_topologias(folhas)
+tops = modif_type(tops)
+tops = top_pop(tops)
+roots = read_all_tops(tops)
+
+display_veros(roots)
 
 
+a = [1,2,3,4]
 
-
-            
-                
-                
-                
-                
-                
-                
-                
-            
-            
+if 1 in a:
+    print(1)
