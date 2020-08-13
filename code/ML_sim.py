@@ -2,7 +2,9 @@ import numpy as np
 import ML_TFK81 as fels
 import matplotlib.pyplot as plt
 import scipy.stats as scp
-from itertools import combinations 
+from itertools import combinations
+import time
+
 # 0 para T
 # 1 para C
 # 2 para A
@@ -98,6 +100,35 @@ def read_all_tops(tops):
         fels_roots.append(S)
     return fels_roots
 
+def change_time(especie, exp_par):
+    if not(especie.pai):
+        especie.filhos[0].tempo = np.random.exponential(scale = exp_par)
+        especie.filhos[1].tempo = np.random.exponential(scale = exp_par)
+        especie.filhos[0].trs =  especie.filhos[0].cria_transicao()
+        especie.filhos[1].trs =  especie.filhos[1].cria_transicao()
+        change_time(especie.filhos[0], exp_par)
+        change_time(especie.filhos[1], exp_par)
+        return especie
+    
+    elif(not(especie.filhos)):
+        especie.tempo = np.random.exponential(scale = exp_par)
+        especie.trs = especie.cria_transicao()
+        
+    else:
+        especie.filhos[0].tempo = np.random.exponential(scale = exp_par)
+        especie.filhos[1].tempo = np.random.exponential(scale = exp_par)
+        especie.filhos[0].trs =  especie.filhos[0].cria_transicao()
+        especie.filhos[1].trs =  especie.filhos[1].cria_transicao()
+        change_time(especie.filhos[0], exp_par)
+        change_time(especie.filhos[1], exp_par)
+
+def change_all_time(roots, exp_par):
+    for i in range(len(roots)):
+        roots[i] = change_time(roots[i], exp_par)
+    return roots
+        
+        
+
 def permute(top):
     new_top = (top[1], top[0])
     return new_top
@@ -111,10 +142,7 @@ def top_pop(tops):
                 tops.remove(permutation)
         i += 1  
     return tops
-                
-    
 
-                          
                     
 def value_gen(n_site):
     valor =  np.zeros(n_site)
@@ -213,26 +241,74 @@ print(num_3/(2500*4))
 
 # criando e avaliando varias topologias
 def display_veros(lista_raiz):
+    veros_array = np.zeros(len(lista_raiz))
     for i in range(len(lista_raiz)):
         # before optimization
         lista_raiz[i].cria_L_condicional_vetor()
-        old_veros = np.sum(np.log(lista_raiz[i].L_arvore))
         veros = fels.otimin_arv(lista_raiz[i])
-        print("Topology{}: old likelihood:".format(i + 1), old_veros, ", new likelihood:", veros)
-        
-        
+        veros_array[i] = veros
+    return veros_array
+
+# fazendo varias simulações de acordo com o nsim
+inicio = time.time()
+nsim = 50
+num_max = 5
+max_data = np.zeros((nsim, num_max))
 tops = []
 folhas = list(np.arange(4))
-
 gera_topologias(folhas)
 tops = modif_type(tops)
 tops = top_pop(tops)
-roots = read_all_tops(tops)
+start = True
 
-display_veros(roots)
+for i in range(nsim):
+    if start == True:
+        roots = read_all_tops(tops)
+        veros_array = display_veros(roots)
+        max_tops = veros_array.argsort()[-num_max:][::-1]
+        max_tops += 1
+        max_data[i] = np.array(max_tops)
+        start = False
+    else:
+        roots = change_all_time(roots, 2)
+        veros_array = display_veros(roots)
+        max_tops = veros_array.argsort()[-num_max:][::-1]
+        max_tops += 1
+        max_data[i] = np.array(max_tops)
+    print(i + 1)
+fim = time.time()
+tempo = fim - inicio
 
 
-a = [1,2,3,4]
+# plotando o grafico 
+fig ,axs = plt.subplots(2,3)
+fig.suptitle("Porcentagem de topologias em cada posição dos 5 maiores valores",
+             fontsize=10)
 
-if 1 in a:
-    print(1)
+for i in range(num_max):
+    if 0 <= i <= 2:
+        (unique, counts) = np.unique(max_data[:, i], return_counts=True)
+        frequencies = np.asarray((unique, counts))
+        # convertendo para porcentagem
+        counts = counts/nsim
+        percentages = np.asarray((unique, counts))
+        axs[0, i].bar(percentages[0], height = percentages[1], color = 'lightblue', 
+           edgecolor='blue')
+        axs[0, i].title.set_text("Posição {}".format(i + 1))
+        axs[0, i].set_xlabel("Topologias")
+        axs[0, i].set_ylabel("Porcentagem")
+    else:
+        (unique, counts) = np.unique(max_data[:, i], return_counts=True)
+        frequencies = np.asarray((unique, counts))
+        # convertendo para porcentagem
+        counts = counts/nsim
+        percentages = np.asarray((unique, counts))
+        axs[1, i - 3].bar(percentages[0], height = percentages[1], color = 'lightblue',
+           edgecolor='blue')
+        axs[1, i - 3].title.set_text("Posição {}".format(i + 1))
+        axs[1, i - 3].set_xlabel("Topologias")
+        axs[1, i - 3].set_ylabel("Porcentagem")
+axs[1,2].axis('off')
+plt.show()
+    
+
