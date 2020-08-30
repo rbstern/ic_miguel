@@ -2,14 +2,12 @@ import numpy as np
 import math
 
 
-
 np.random.seed(0)
 n_base = 4
 #taxa de substituição de base por tempo
 # priori para a raiz
 # priori = np.full((n_base, 1), 1/n_base)
 # priori = np.array([[0.123, 0.210, 0.3, 0.367]]).transpose()
-
 
 
 # Classe Especie (Árvore binaria)
@@ -454,12 +452,5 @@ def otimin_arv(raiz):
 #       S4.prob_condicional(2,0) + S4.prob_condicional(3,0))
 # 
 # =============================================================================
-
-
-
-### posteriormente criar classe do tipo "arvore"
-### predição só use valores temporarios (val.temp)
-### resolver problema na predição (slice e recalc na raiz) e testar para caso com 2 e 3 codons
-### foco em apresentar
 
 
